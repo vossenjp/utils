@@ -1,0 +1,30 @@
+#!/bin/bash -
+# chperm--Set owner.group and mode/permissions on a given file in 1 step
+# JP, circa 2020-08?
+
+# TODO?
+# * Switch to using options: -f (-m | -p) -o
+# * Add -r switch (use a case statement)
+# * When -r, make -m = file/default and -d = dir perms, then use find|zargs
+
+[ $# -lt 3 -o "$1" == '-h' -o "$1" == '-help' -o "$1" == '--help' ] && {
+    cat <<-'EoN'
+	Set owner and permissions on a given file
+
+	Usage: $0 <mode> <user.group> <file(s)>
+	 e.g.: $0 0644 root.root /path/to/myfile
+
+	* Does not use -R
+	* mode is 0755 if not specified
+	* owner is $USER.$USER if not specified
+
+	EoN
+    exit 0
+}
+
+mode="${1:-0755}"
+owner="${2:-$USER.$USER}"
+shift 2
+
+chown $owner $*
+chmod $mode  $*

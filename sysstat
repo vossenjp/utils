@@ -1,0 +1,165 @@
+#!/bin/sh -
+# sysstat--Display some system stats (e.g. run from cron periodically)
+
+# $Id: sysstat 1488 2008-05-29 21:47:54Z root $
+# $URL: file:///home/SVN/usr_local_bin/sysstat $
+
+VERSION='$Id: sysstat 1488 2008-05-29 21:47:54Z root $'
+COPYRIGHT='Copyright 2005-2007 JP Vossen (http://www.jpsdomain.org/)'
+LICENSE='GNU GENERAL PUBLIC LICENSE'
+PROGRAM=$(basename $0)
+
+# Make sure we have a hostname
+[ "$HOSTNAME" ] || HOSTNAME=`hostname`
+
+# FIXME ?????????????????????????????????????????????
+# -h = help
+# -v = verbose
+# VERBOSE=':'
+#
+# Add lshal, lshw, lsmod | sort, lspci, lspcmcia, lsusb.  Maybe use -v on some?
+#
+# Add software RAID stuff (/etc/mdadm?):
+#   mdadm --detail --scan
+#   mdadm --detail $(mdadm --detail --scan | awk '/^ARRAY/ {print $2}' | sort)
+# Add LVM stuff (/etc/lvm?):
+#   vgdisplay, pvscan, pvdisplay, lvscan, lvdisplay, vgcfgbackup, ???
+# Add other disk stuff
+#   for i in $(fdisk -l | awk '/^\/dev/ {print $1}');do echo -e "\n\ntune2fs -l $i\n"; tune2fs -l $i; done
+#
+# REPLACE fdisk with cfdisk), parted, or sfdisk -d
+
+SEPARATOR='\n\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n'
+
+# Output file prefix
+OUTPUT='/etc/sysstat'
+
+# .1.general
+# .2.disk
+# .3.network
+# .4.system
+# .5.user		??
+# .6.packages
+# .7.files
+# .8.mbr.backup
+
+
+# Set a sane/secure path and export it
+# FIXME Use getconf?????????????????????????????????????????????
+PATH=/usr/local/bin:/bin:/usr/bin:/sbin
+export PATH
+
+# GLOBAL variables are in UPPER case
+# local variable are in lower case
+# Functions are in Mixed Case
+#----------------------------------------------------------
+# Display a file or the results of a command
+# Called like:  Display "<Section Header>" <file or command>
+Display () {
+    if [ -r $2 ]; then
+        printf "$1\n"   # Section header
+        cat $2
+        printf "%b" $SEPARATOR
+    elif [ not $(which $2 > /dev/null 2>&1) ]; then
+        # Note which returns 0 if the file is found, which is what we want
+        # so the correct if counterintuitive logic is 'not which'
+        if [ -x $(which $2) ]; then
+            printf "%b" "$1"   # Section header
+            shift
+            # printf "DEBUG: ~$*~\n"
+            eval $*
+            printf "%b" "$SEPARATOR"
+        fi
+    else
+        printf "%b" "Unable to display: $*"
+        printf "%b" "$SEPARATOR"
+    fi
+}
+
+###########################################################
+# Main
+
+$verbose 'Output General Info' >&2
+printf "%b" "System Statistics ($PROGRAM)\n"
+printf "%b" "\tPath:\t$0\n"
+printf "%b" "\tVer:\t$VERSION\n"
+printf "%b" "\nDate:\t`date '+%Y-%m-%d %H:%M:%S %Z'`\n"
+printf "%b" "Host:\t$HOSTNAME\n"
+printf "%b" "uptime:\t"
+  uptime
+printf "%b" "uname:\t"
+  uname -a
+printf "%b" "Linux version\t"
+  cat /proc/version
+printf "%b" "\n'Release' Info:\n"
+  head -99999 /etc/*-release
+printf "%b" "$SEPARATOR"
+
+
+$verbose 'Disk info' >&2
+Display 'Disk Space\n\n' df --human-readable --local --print-type
+Display 'Partitions\n'   /proc/partitions
+[ -r /proc/megaraid ] \
+  && Display 'CERC Info\n' head `find /proc/mdstat /proc/megaraid -type f`
+Display 'fdisk info'     fdisk -l
+# If SMARTD is installed:
+if [ -r /etc/smartd.conf ]; then
+    printf "SMARTd Info\n"
+    for drive in `grep '^/dev/[sh]d.' /etc/smartd.conf | cut -d' ' -f1`; do
+        # smartctl -a $drive                    # REALLY noisy
+        smartctl -H $drive | grep '^SMART'    # Quiet
+        printf "\n"
+    done
+    printf "%b" "$SEPARATOR"
+fi
+
+
+$verbose 'Network Info' >&2
+Display 'IP Info\n\n'                    ifconfig -a
+Display 'Link Info\n\n'                  mii-tool
+Display 'Interface Stats\n\n'            netstat --interface --all
+# Display 'NOISY Interface Stats\n\n'    netstat --statistics
+Display 'Routes\n\n'                     netstat --route --numeric
+Display 'Daemons Listening\n\n'          netstat --listening --numeric --program
+
+
+$verbose 'Other System and Hardware Info' >&2
+Display 'Memory Info\n'  /proc/meminfo
+Display 'CPU Info'       /proc/cpuinfo
+Display 'Interrupts'     /proc/interrupts
+Display 'IO Memory'      /proc/iomem
+Display 'IO Ports'       /proc/ioports
+Display 'Swap Stats'     /proc/swaps
+Display 'PCI Bus'        lspci -vv
+
+
+$verbose 'User stats' >&2
+printf "%b" "Number of users:\t$(wc -l /etc/passwd| awk '{print $1,$2}')\n"
+printf "%b" "Number of groups:\t$(wc -l /etc/group| awk '{print $1,$2}')\n"
+printf "%b" "Users with UID=0:\t$(cut -d: -f3 /etc/passwd | grep -c '^0$')\n"
+printf "%b" "$SEPARATOR"
+#Display 'Number of Processes (ps -e):\t' ps -e "| wc -l | tr -d ' '"
+
+$verbose 'Package list' >&2
+if [ -x /usr/bin/apt-get ]; then
+    #Display 'Installed Package Versions' COLUMNS=400 dpkg --list | tail +6 \
+    #  | awk 'BEGIN {OFS = "\t"} /^ii[[:space:]]/ {print $2,$3}'
+    Display 'Installed Package Versions' dpkg-query -W \
+      | perl -pe 's/^(.*?)\t(?:\d:)?(.*)$/$1_$2/;
+elif [ -x /bin/rpm ]; then
+    Display 'Installed Package Versions' \
+      rpm --query --all --queryformat '%{NAME}\t%{VERSION}\n'
+fi
+
+$verbose 'File list' >&2
+find / \( -path /proc -o -path /mnt -o -path /tmp -o -path /var/tmp \
+  -o -path /var/cache -o -path /scratch \) -prune \
+  -o -type d -printf 'd%m\t%u\t%g\t%s\t%t\t%p/\n' \
+  -o -type l -printf 'l%m\t%u\t%g\t%s\t%t\t%p -> %l\n' \
+  -o         -printf '%m\t%u\t%g\t%s\t%t\t%p\n' \)
+
+$verbose 'Backup the MBR, just in case' >&2
+dd if=/dev/hda of=${OUTPUT}.8.mbr.backup bs=512 count=1
+
+# Set strict permissions on the outout
+# chmod 0600 ${OUTPUT}*

@@ -1,0 +1,30 @@
+#!/bin/bash -
+# tattle--Log the way this program was called
+
+# $Id: tattle 918 2005-07-01 04:14:23Z root $
+# $URL: file:///home/svn/usr_local_bin/tattle $
+
+# Useful for tracing remote commands such as rsync over SSH.
+# e.g. use '--rsync-path=/usr/bin/tattle' on the remote side to see
+# exactly what rsync is doing.
+
+# Set a sane/secure IFS (note this is bash syntax only--not portable!)
+IFS=$' \t\n'
+
+# Set a sane/secure path and export it
+PATH=/usr/local/bin:/bin:/usr/bin
+export PATH
+
+# Set a sane/secure umask variable and use it
+# 002 results in 774 perms, 077 results in 700 perms, etc...
+umask 002
+
+
+# Set the log file
+# Make sure the user running tattle has write access!
+TATTLELOG='/tmp/tattle.log'
+
+# Do the work
+# No output, in case it would conflict with the remote command
+printf "Tattling: ~$0 $*~\n" >> $TATTLELOG
+

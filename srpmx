@@ -1,0 +1,16 @@
+#!/bin/sh
+# srpm-extract -- Extract files from a source RPM
+# 2002-05-27 JPV
+
+if [ -z "$1" ]; then
+    echo ''
+    echo 'To extract files from an SRPM:'
+    echo ''
+    echo "     usage: $0 {Package Name}"
+    echo ''
+    echo "     Hint: you probably want to be in an empty temp dir."
+    echo ''
+    exit 1
+else
+    rpm2cpio $1 | cpio -i --make-directories
+fi

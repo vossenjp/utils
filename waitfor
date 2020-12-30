@@ -1,0 +1,28 @@
+#!/bin/bash -
+# waitfor--Like sleep except for a random integer period in an arbitrary range
+# $Id: waitfor 2077 2018-12-15 22:00:29Z root $
+
+# See also (note ${varname:offset:len}):
+    # 3 digits: echo sleep ${RANDOM:0:3}s
+    # 2 digits: echo sleep ${RANDOM:0:2}s
+    # 1 digit:  echo sleep ${RANDOM:0:1}m
+    # Use in cron like: 30 8-21/* * * * sleep ${RANDOM:0:3}s ; /path/to/script
+
+# Usage: $0 max        # Default min = 1
+# Usage: $0 min max
+
+if [ "$2" ]; then
+    min="$1"
+    max="$2"
+else
+    min='1'
+    max="$1"
+fi
+
+random_delay='-1'
+until [ $random_delay -ge $min -a $random_delay -le $max ]; do
+    random_delay=$RANDOM
+done
+
+sleep $random_delay
+exit 0

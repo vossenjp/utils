@@ -1,0 +1,81 @@
+# settings/inputrc:  # readline settings
+# To re-read (and implement changes to this file) use:
+# bind -f $SETTINGS/inputrc
+
+$include /etc/inputrc
+
+$if Bash
+  # Added by JP 2004-05-06, 2004-05-30, 2004-06-01
+  # Ignore case when doing completion
+    set completion-ignore-case on
+  # Completed dir names have a slash appended
+    set mark-directories on
+  # Completed names which are symlinks to dirs have a slash appended
+    set mark-symlinked-directories on
+  # List ls -F for completion
+    set visible-stats on
+  # Cycle through ambiguous completions instead of list
+    "\C-i": menu-complete
+  # Set bell to audible
+    set bell-style audible
+  # List possible completions instead of ringing bell
+    set show-all-if-ambiguous on
+
+  # From the readline documentation at
+  # http://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC12
+  # Macros that are convenient for shell interaction
+  # edit the path
+    "\C-xp": "PATH=${PATH}\e\C-e\C-a\ef\C-f"
+  # prepare to type a quoted word -- insert open and close double quotes
+  # and move to just after the open quote
+    "\C-x\"": "\"\"\C-b"
+  # insert a backslash (testing backslash escapes in sequences and macros)
+    "\C-x\\": "\\"
+  # Quote the current or previous word
+    "\C-xq": "\eb\"\ef\""
+  # Add a binding to refresh the line, which is unbound
+    "\C-xr": redraw-current-line
+  # Edit variable on current line.
+    #"\M-\C-v": "\C-a\C-k$\C-y\M-\C-e\C-a\C-y="
+    "\C-xe": "\C-a\C-k$\C-y\M-\C-e\C-a\C-y="
+$endif
+
+# some defaults / modifications for the emacs mode
+$if mode=emacs
+
+  # allow the use of the Home/End keys
+    "\e[1~": beginning-of-line
+    "\e[4~": end-of-line
+
+  # allow the use of the Delete/Insert keys
+    "\e[3~": delete-char
+    "\e[2~": quoted-insert
+
+  # mappings for "page up" and "page down" to step to the beginning/end of the history
+#    "\e[5~": beginning-of-history
+#    "\e[6~": end-of-history
+
+  # alternate mappings for "page up" and "page down" to search the history
+#    "\e[5~": history-search-backward
+#    "\e[6~": history-search-forward
+
+  # MUCH nicer up-arrow search behavior!
+    "\e[A": history-search-backward  ## up-arrow
+    "\e[B": history-search-forward   ## down-arrow
+
+  # mappings for Ctrl-left-arrow and Ctrl-right-arrow for word moving
+  ### These were/are broken, and /etc/inputrc has better anyway
+#    "\e[5C": forward-word
+#    "\e[5D": backward-word
+#    "\e\e[C": forward-word
+#    "\e\e[D": backward-word
+
+  # for non RH/Debian xterm, can't hurt for RH/Debian xterm
+    "\eOH": beginning-of-line
+    "\eOF": end-of-line
+
+  # for freebsd console
+    "\e[H": beginning-of-line
+    "\e[F": end-of-line
+
+$endif

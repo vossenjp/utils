@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# untar--simple (GNU) tar wrapper
+
+# $Id: untar 1445 2008-03-26 05:25:36Z root $
+
+PROGRAM=${0##*/}
+VERSION='$Id: untar 1445 2008-03-26 05:25:36Z root $'
+COPYRIGHT='Copyright 2007 JP Vossen (http://www.jpsdomain.org/)'
+LICENSE='GNU GENERAL PUBLIC LICENSE v2'
+
+#----------------------------------------------------------
+# Define functions
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Help
+# Called like:  Usage
+function Usage {
+    # Note use of <<- 'here document' style which strips leading TABs but
+    # not leading space, allowing for more or less proper indenting.
+
+    # Follow the classic man page format
+    cat <<-EoN
+	NAME
+	    $PROGRAM--simple (GNU) tar wrapper
+
+	SYNOPSIS
+	    $PROGRAM [OPTIONS] <tarball> [<tarball>...]
+
+	OPTIONS
+	    -v = Be verbose
+	    -h = This usage
+	    -V = Show version, copyright and license information
+
+	    Examples:
+	        $PROGRAM -v tarball1.tgz tarball2.tar.Z tarball3.tar.bz2
+
+	DESCRIPTION ($VERSION)
+	    Extract a "tarball" into the currect directory if it is well behaved,
+	    otherwise extract it into a temporary directory and alert the user that
+	    it made a mess.
+
+	    Automatically use the right uncompress options (requires GNU tar).
+
+	    A "well behaved" tarball will extract into a single directory (usually
+	    its name or something reasonable) in the current directory.  A
+	    misbehaving tarball will extract two or more files and/or directories
+	    into the current directory and generally make a big annoying mess.
+
+	AUTHOR / BUG REPORTS
+	    JP Vossen (jp {at} jpsdomain {dot} org)
+	    http:www/jpsdomain.org
+
+	COPYRIGHT & LICENSE
+	    $COPYRIGHT
+	    $LICENSE
+
+	SEE ALSO
+	    man tar
+	    http://www.gnu.org/software/tar/manual/index.html
+	    ./examples/scripts.v2/untar in the latest bash tarball
+	    http://www-128.ibm.com/developerworks/aix/library/au-badunixhabits.html?ca=lnxw01GoodUnixHabits#two
+	EoN
+} # end of function Usage
+
+
+###########################################################
+# Main
+
+VERBOSE=':'  # Set to to NoOp by default, maybe change it later per -v
+
+# Trvially figure out script options
+case "$1" in
+    --help|-h )
+        Usage
+        exit 0
+        ;;
+    --version|-V )
+        printf "%s\n" "$0" '$Id: untar 1445 2008-03-26 05:25:36Z root $' "$COPYRIGHT" "$LICENSE"
+        exit 0
+        ;;
+    --verbose|-v )
+        VERBOSE='echo'
+        global_tar_ops="-v"
+        shift
+        ;;
+esac  # End of options handling
+
+# Figure out what to do with each tarball we're given
+# MAIN LOOP
+while [ -n "$1" ]; do
+
+    tarball="$1"
+    tar_ops="$global_tar_ops"  # Handle each new tarball individually
+
+    # Figure out how to uncompress it
+    case "$tarball" in
+        *.tgz|*.tar.gz )
+            tar_ops="$tar_ops --gunzip"
+            ;;
+
+        *.tar.bz2 )
+            tar_ops="$tar_ops --bunzip2"
+            ;;
+
+        *.tar.Z )
+            tar_ops="$tar_ops --uncompress"
+            ;;
+
+        *.tar )
+            tar_ops="$tar_ops"
+            ;;
+
+        * )
+            printf "\a\n%b\n" "$0 FATAL: '$tarball' not one of: *.tgz, *.tar.gz, *.tar.bz2, *.tar.Z, *.tar"
+            echo "so I don't know what to do!"
+            exit 1
+            ;;
+
+    esac
+    shift
+
+    # Make sure the tarball exists and that we can read it!
+    [ -r "$tarball" ] || {
+        printf "\a\n%b\n" "$0 FATAL: '$tarball' not found or not readable!"
+        exit 2
+    }
+
+    # Rather than trying to figure out if the tarball will misbehave and dump
+    # anything/everything in the current directory, we'll cheat and force it
+    # to write to a known-empty temp dir using tar -C.
+    # So name then create the temp dir
+    until [ -n "$tar_temp_dir" -a ! -d "$tar_temp_dir" ]; do
+        tar_temp_dir="$tarball.temp.$RANDOM$RANDOM"
+    done
+    mkdir -p $tar_temp_dir || {
+        printf "\a\n%b\n" "$0 FATAL: Could not create '$tar_temp_dir'!"
+        exit 3
+    }
+
+    # Actually untar it (or die trying)
+    tar_command="tar -C $tar_temp_dir $tar_ops -xf $tarball"
+    $VERBOSE "Running: $tar_command"
+    eval $tar_command || {
+        printf "\a\n%b\n" "$0 FATAL: command '$tar_command' failed!"
+        exit 4
+    }
+
+    # Now, if and only if there is a single directory in our temp dir, we know
+    # the tarball was well behaved and we'll eliminate the extra directory
+    unset items dirs
+    for i in $tar_temp_dir/*; do
+        (( items++ ))
+        [ -d "$i" ] && (( dirs++ ))
+    done
+    if [ "$items" = '1' -a "$dirs" = '1' ]; then
+        mv $i . && rmdir $tar_temp_dir
+    else
+        printf "\a\n%b\n" "$0 WARN: '$tarball' made a mess in '$tar_temp_dir':"
+        ls -l $tar_temp_dir
+    fi
+
+done # with the MAIN LOOP

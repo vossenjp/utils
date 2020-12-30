@@ -1,0 +1,164 @@
+#!/bin/bash -
+# replace_mirrored_disk--Replace a failed disk in a Linux software mirror
+# $Id: replace_mirrored_disk 2082 2018-12-15 22:07:01Z root $
+
+# See also:
+    # angstrom:/root/grow-boot.angstrom
+    # /opt/bin/disk-and-partitions
+
+# Adapted from:  http://www.kernelhardware.org/replacing-failed-raid-drive/
+# Used 2010-04-14 on PANTUG server
+# Used 2010-11-24 on DevImg server (CentOS-5) to recover mirror to larger
+    # drive.  H:\@PROJECTS\Hard drive upgrade cascade 2010-11.txt
+# Used 2010-11-26 on mythtv-be-01 (Ubuntu 8.04 LTS) to recover mirror to larger
+    # drive.  H:\@PROJECTS\Hard drive upgrade cascade 2010-11.txt
+# Used 2013-12-04 on griffin (Ubuntu 12.04 LTS) to recover mirror to larger
+    # drive.
+
+# TODO
+# Add some more/better logging?
+
+
+# What to work on: update and uncomment
+#GOOD_DISK='/dev/sda'    ### DO NOT SCREW THIS UP!!!!
+#BAD_DISK='/dev/sdb'     ### DO NOT SCREW THIS UP!!!!
+
+# Create arrays that maps /dev/md? to /dev/sd? for the bad disk
+# Use output from 'cat /proc/mdstat'
+RAID=(/dev/md0  /dev/md1)    ### DO NOT SCREW THIS UP!!!!
+DISK=(/dev/sdb1 /dev/sdb2)   ### DO NOT SCREW THIS UP!!!!
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Sanity Check stuff before we begin
+
+# Check disk
+[ -n "$GOOD_DISK" -a -b "$GOOD_DISK" ] || {
+    echo "GOOD_DISK '$GOOD_DISK' not set, does not exist or is not a block device..."
+    exit 1
+}
+
+# Check running as root
+[ "$EUID" == 0 ] || {
+    echo "Need to run as root, not as EUID '$EUID'..."
+    exit 2
+}
+
+# Make sure all the other stuff we need is here
+function _exists {
+    local program="$1"
+    [ -x $program ] || {
+        echo "$program not found or not executable..."
+        exit 3
+    }
+} # end of function _exists
+
+#FDISK='/sbin/fdisk'  # OPTIONAL: needed if moving to larger hard drive
+#    _exists "$FDISK"  # OPTIONAL: needed if moving to larger hard drive
+SFDISK='/sbin/sfdisk'
+    _exists "$SFDISK"
+GRUB_INSTALL='/usr/sbin/grub-install'
+    _exists "$GRUB_INSTALL"
+MDADM='/sbin/mdadm'
+    _exists "$MDADM"
+
+[ -r /proc/mdstat ] || {
+    echo "/proc/mdstat not found, are you really running Linux software RAID?"
+    exit 4
+}
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Define functions
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+### Part 1, fail & remove bad device, then shut down
+function _part1 {
+    echo 'See what has failed.  Anything not [UU] is a Bad Thing.' >&2
+    echo '' >&2
+    cat /proc/mdstat
+
+    echo '' >&2
+    echo "Going to operate as follows.  If this doesn't match the output" \
+      "above, abort and fix!" >&2
+    for (( i=0; i < ${#RAID[@]}; i++ )); do
+        echo "$MDADM --manage ${RAID[$i]} --{stuff} ${DISK[$i]}"
+    done
+    read -p "Enter to continue or CTRL-C to abort."
+
+
+    echo '' >&2
+    echo "'Fail' all partitions on bad disk" >&2
+    for (( i=0; i < ${#RAID[@]}; i++ )); do
+        echo "$MDADM --manage ${RAID[$i]} --fail ${DISK[$i]}"
+        $MDADM --manage ${RAID[$i]} --fail ${DISK[$i]}
+    done
+
+    echo '' >&2
+    echo "Remove all partitions on bad disk" >&2
+    for (( i=0; i < ${#RAID[@]}; i++ )); do
+        echo "$MDADM --manage ${RAID[$i]} --remove ${DISK[$i]}"
+        $MDADM --manage ${RAID[$i]} --remove ${DISK[$i]}
+    done
+
+
+    echo '' >&2
+    echo 'Power off the system and physically replace the hard drive.'
+    # echo shutdown -h now
+} # end of function _part1
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+### Part 2, after bad disk replaced, re-add to RAID and install GRUB
+function _part2 {
+    echo '' >&2
+    echo "Mirror partitions from good disk ($GOOD_DISK) to bad ($BAD_DISK)" >&2
+    echo "$SFDISK -d $GOOD_DISK | $SFDISK $BAD_DISK"
+    $SFDISK -d $GOOD_DISK | $SFDISK $BAD_DISK
+    #partprobe ?
+    #$FDISK $BAD_DISK  # OPTIONAL: needed if moving to larger hard drive
+    # Should find a way to automate this!
+
+    echo '' >&2
+    echo "Verify new partitions on new disk ($BAD_DISK)" >&2
+    $SFDISK -l $BAD_DISK
+    read -p "Enter to continue or CTRL-C to abort."
+
+    echo '' >&2
+    echo 'Add all partitions on replaced disk' >&2
+    for (( i=0; i < ${#RAID[@]}; i++ )); do
+        echo "$MDADM --manage ${RAID[$i]} --add ${DISK[$i]}"
+        $MDADM --manage ${RAID[$i]} --add ${DISK[$i]}
+    done
+
+
+    echo '' >&2
+    echo 'Make sure things look good and are being synchronized.' >&2
+    echo "cat /proc/mdstat"
+    cat /proc/mdstat
+    # watch -d cat /proc/mdstat
+
+    # WAIT???
+    # echo '' >&2
+    # echo "WAIT for '${RAID[$i]}' to re-sync..." >&2
+    # time $MDADM --wait ${RAID[$i]}
+
+    echo '' >&2
+    echo "Install grub: $GRUB_INSTALL $BAD_DISK" >&2
+    echo "$GRUB_INSTALL $BAD_DISK"
+    $GRUB_INSTALL $BAD_DISK
+} # end of function _part2
+
+
+###########################################################
+# Main
+
+# Usage "hidden" here in an attempt to make the user read the script
+# Usage: $0 part1 --or-- $0 part2
+
+case "$1" in
+    part1 ) _part1 ;;
+    part2 ) _part2 ;;
+    * )
+        echo "You need to read and edit $0 before you can run it!"
+        exit 10
+esac

@@ -1,0 +1,202 @@
+#!/bin/bash -
+# sshfsw--sshfs wrapper
+
+# $Id: sshfsw 2076 2018-12-15 21:59:48Z root $
+
+PROGRAM=${0##*/}
+VERSION='$Id: sshfsw 2076 2018-12-15 21:59:48Z root $'
+COPYRIGHT='Copyright 2008-2010 JP Vossen (http://www.jpsdomain.org/)'
+LICENSE='GNU GENERAL PUBLIC LICENSE v2'
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Help
+# Called like:  Usage
+function Usage {
+    # Note use of <<- 'here document' style which strips leading TABs but
+    # not leading space, allowing for more or less proper indenting.
+
+    # Follow the classic man page format
+    less -n <<-EoN
+	NAME
+	    $PROGRAM--wrapper for common sshfs functions
+
+	SYNOPSIS
+	    $PROGRAM argument [options]
+	    $PROGRAM remote_path local_path [options]
+
+	    Examples:
+	        $PROGRAM mydoc [options]
+	        $PROGRAM root@drake:/tmp
+	        $PROGRAM root@drake:/tmp dtmp '-p 2222 -C'
+	        $PROGRAM root@drake:/tmp dtmp '-o allow_other'
+	        $PROGRAM umount mydoc
+
+	ARGUMENTS
+	    mydoc*s           # Map MyDocs on Drake locally to MyDocs
+	    mac               # Same as MyDocs except Mac and dMyDocs (to avoid local MyDocs)
+	    show|list         # Show existing sshfs mounts
+	    rm|unmount|del    # Unmount an sshfs mount point
+	    {remote} {local}  # Do an arbitrary sshfs mount
+	    clean|clear|wipe  # Remove all SSH "ControlMaster" sockets
+
+	DESCRIPTION ($VERSION)
+	    sshfs is a brilliant, FUSE-based way to access files on any remote
+	    server that has sshd (and sftp).  It's much simpler than Samba, and is
+	    much more secure than Samba or NFS.  It also allows mapping to different
+	    users on the remote side, which is tedious in Samba and impossible in
+	    NFS.  It's best suited to mounting arbitrary remote directories on an
+	    ad-hoc, per-user basis; much like "mapping" drives under Netware or
+	    Windows.
+
+	    * $PROGRAM will make sure that the local mount point exists and is
+	      empty, and remove it when finished.
+	    * Interesting options include '-p PORT' and -C for compression.
+
+	TROUBLESHOOTING
+	    * Add user to /etc/group:fuse
+	    * sudo chmod +x /bin/user*
+	    * sudo chmod +r /etc/fuse.conf
+	    * sudo chmod 0666 /dev/fuse        # Last resort
+
+	  fusermount: failed to unmount /path/to/mount_point: Device or resource busy
+	    * umount -l -f /path/to/mount_point
+
+	AUTHOR / BUG REPORTS
+	    JP Vossen (jp {at} jpsdomain {dot} org)
+	    http://www.jpsdomain.org/
+
+	COPYRIGHT & LICENSE
+	    $COPYRIGHT
+	    $LICENSE
+
+	SEE ALSO
+	    * man sshfs; man fusermount
+	    * sshfs, fuse:
+	      - http://en.wikipedia.org/wiki/SSHFS
+	      - http://fuse.sourceforge.net/sshfs.html
+	      - http://fuse.sourceforge.net/wiki/index.php/SshfsFaq
+	      - http://fuse.sourceforge.net/
+	EoN
+} # end of function Usage
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Verify that the intended local mountpoint exists and create it if not
+# Called like:  verify 'some_path'
+function verify {
+    local mountpoint="$1"
+    [ -d "$mountpoint" ] || mkdir "$mountpoint"
+    [ -d "$mountpoint" ] || {
+        echo "Error creating or using '$mountpoint'!"
+        exit 1
+    }
+    # Not checking for empty dir because sshfs does that itself
+}
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Verify the local mountpoint then use sshfs/fuse to mount it
+# Called like:  map 'remote' 'mountpoint' 'options'
+# See man sshfs for details
+function map {
+    local remote="$1"
+    local mountpoint="$2"
+    local options="$3"
+
+    verify "$mountpoint"
+    $sshfs $options "$remote" "$mountpoint" || {
+        echo "'$sshfs $options $remote $mountpoint' failed = ~$?~!"
+        # exit 2  # Keep going in case other maps work
+    }
+}
+
+
+###########################################################
+# Main
+
+# Work-around user = "vmuser" on KJ laptop
+[ "$HOSTNAME" = 'karen-host' ] && USER='karen'
+
+sshfs='sshfs'  # Could add global options here
+drake='drake.jpsdomain.org'
+joint="$HOME/MyDocs/Joint"
+
+# Use meaningful names
+remote="$1"
+mountpoint="$2"
+options="$3"
+
+# Figure out what to do and go do it
+case "$remote" in
+
+    mydoc* )
+        options="$mountpoint"  # Shift arguments as needed
+        # "-o nonempty" for e.g. mini9 that has minimal ~/MyDocs/HOME/INTERNET/signature
+        map "$USER@$drake:/home/$USER/MyDocs" "$HOME/MyDocs" "-o idmap=user -o nonempty $options"
+        sleep 2
+        map "$USER@$drake:/home/JOINT"        "$HOME/Joint"  "-o idmap=user -o gid=1002 $options"
+        sleep 2
+        map "$USER@$drake:/home/PUB"          "$HOME/Pub"    "-o ro $options"
+        sleep 2
+        map "$USER@$drake:/tmp"               "$HOME/dtmp"   "-o idmap=user $options"
+    ;;
+
+    mac )
+        options="$mountpoint"  # Shift arguments as needed
+#        map "$USER@jpmac:"                    "$HOME/mac"     "-o idmap=user $options"
+        echo 'Enter jp@mac password:'
+        map "$USER@jpmac:"                    "$HOME/mac"     "-o idmap=user -o gid=1000 $options"
+        map "$USER@$drake:/home/$USER/MyDocs" "$HOME/dMyDocs" "-o idmap=user $options"
+        map "$USER@$drake:/home/JOINT"        "$HOME/Joint"   "-o idmap=user -o gid=1002 $options"
+        map "$USER@$drake:/home/PUB"          "$HOME/Pub"     "-o ro $options"
+        map "$USER@$drake:/tmp"               "$HOME/dtmp"    "-o idmap=user $options"
+    ;;
+
+    show|list )
+        # Is there a better way?!?
+        mount | grep 'sshfs' | grep "user=$USER"
+    ;;
+
+    umount|unmount|um*|unm*|rm|del )
+        case "$mountpoint" in
+            mydoc* )
+                fusermount -u "$HOME/MyDocs" && rmdir "$HOME/MyDocs"
+                fusermount -u "$HOME/Joint"  && rmdir "$HOME/Joint"
+                fusermount -u "$HOME/Pub"    && rmdir "$HOME/Pub"
+                fusermount -u "$HOME/dtmp"   && rmdir "$HOME/dtmp"
+            ;;
+            mac* )
+                fusermount -u "$HOME/mac"    && rmdir "$HOME/mac"
+                fusermount -u "$HOME/dMyDocs" && rmdir "$HOME/dMyDocs"
+                fusermount -u "$HOME/Joint"  && rmdir "$HOME/Joint"
+                fusermount -u "$HOME/Pub"    && rmdir "$HOME/Pub"
+                fusermount -u "$HOME/dtmp"   && rmdir "$HOME/dtmp"
+            ;;
+            * )
+                fusermount -u "$mountpoint"  && rmdir "$mountpoint"
+            ;;
+        esac
+    ;;
+
+    wipe|clean|clear )
+        # Remove all SSH "ControlMaster" sockets
+        rm -f $HOME/.ssh/master-*
+    ;;
+
+    -h|--help|help|'?' )
+        Usage
+        exit 0
+    ;;
+
+    * )  # Otherwise, just pass the details on to sshfs
+        # If mountpoint not specified, use the last part of the remote path
+        [ -z "$mountpoint" ] && {
+            mountpoint="${remote##*/}"     # in case ...:/path/to
+            mountpoint="${mountpoint##*:}" # in case ...:path
+        }
+        # If options are needed, then all three arguments MUST be specificed
+        # TODO, use a '-o' argument for this script?
+        map "$remote" "$mountpoint" "$options"
+    ;;
+esac

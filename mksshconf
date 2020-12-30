@@ -1,0 +1,33 @@
+#!/bin/bash -
+# mksshconf--trivial script to make ~/.ssh/config file since you can't #INCLUDE
+
+global_config='/opt/bin/settings/ssh_config'
+local_config="$HOME/.ssh/config.local"
+config="$HOME/.ssh/config"
+
+# No point if there is no global file
+[ -r $global_config ] || {
+    echo "FATAL: can't find global config '$global_config'!"
+    exit 1
+}
+
+# Local file is optional
+[ -r $local_config ] && {
+    # Backup, then create the new file
+    cp -av $config $config.bak
+    echo "$global_config + $local_config > $config"
+    cat $global_config $local_config > $config
+} || {
+    echo "Note: can't find local config '$local_config'."
+    cp -av $config $config.bak
+    cp -v  $global_config               $config
+}
+
+echo 'Setting owner and perms, just in case...'
+# OpenSSH is quite picky...  Though some of this is a bit over-kill...
+chown -R $USER $HOME/.ssh
+chmod go-w $HOME
+chmod 0700 $HOME/.ssh
+chmod 0600 $HOME/.ssh/{authorized_keys,known_hosts} \
+           $HOME/.ssh/*rsa \
+           $HOME/.ssh/*config*

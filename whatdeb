@@ -1,0 +1,39 @@
+#!/bin/bash
+# What RPM/DEB -- Quick and Dirty find for installed RPMs or DEBs
+
+# $Id: whatdeb 1332 2007-07-06 06:02:26Z root $
+
+# Figure out what to run
+if [ "${0#*what}" = 'rpm' ]; then
+    # Our name is "whatrpm'
+    PROGRAM='rpm -qa --nodigest --nosignature'
+else
+    # Our name is "whatdeb'
+    # dpkg-query -W output is like:
+    #   zip     2.32-1
+    #   zlib1g  1:1.2.3-13
+    # So combine the fields and remove any /\d:/ that exist.
+    PROGRAM="dpkg-query -W | perl -pe 's/^(.*?)\t(?:\d:)?(.*)\$/\$1_\$2/;'"
+fi
+
+# Sort the basic raw output no matter what
+PROGRAM="$PROGRAM | sort"
+
+# Figure out what to do
+if [ "$1" = '-h' -o "$1" = '--help' ]; then
+    echo ''
+    echo 'Check an installed package by name or list installed packages:'
+    echo ''
+    echo "     usage: $0 {Package name or fragment}"
+    echo 'or'
+    echo "     usage: $0 \"{Package name}|{Package fragment}|{Package name}\""
+    echo 'or'
+    echo "     usage: $0"
+    echo ''
+    exit 1
+elif [ -n "$1" ]; then
+    PROGRAM="$PROGRAM | egrep -i $1"
+fi
+
+# Do it
+eval $PROGRAM

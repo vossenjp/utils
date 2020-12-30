@@ -1,0 +1,20 @@
+#!/bin/bash -
+# editable_menu_shortcuts--Turn Gnome editable menu shortcuts on and off
+# Used to be in System > Preferences > Appearance > Interface
+# but up-stream Gnome removed that, affects Ubuntu 10.04+
+
+# $Id: editable_menu_shortcuts 1686 2010-06-11 19:25:52Z root $
+
+case "$1" in
+    on|true  )
+        gconftool --set --type bool /desktop/gnome/interface/can_change_accels  true
+        ;;
+    off|false )
+        gconftool --set --type bool /desktop/gnome/interface/can_change_accels false
+        ;;
+    sh* )
+        show='gconftool --get /desktop/gnome/interface/can_change_accels'
+        echo "$show"
+        $show ;;
+    *   ) echo "Usage: $0 (on|off|show)" ;;
+esac

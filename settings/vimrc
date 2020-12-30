@@ -1,0 +1,236 @@
+" JP vim settings
+" $Id: vimrc 2117 2020-04-05 20:08:36Z root $
+" http://www.vim.org/htmldoc/usr_05.html
+    " https://github.com/markburns/useful-bash-scripts/blob/master/.vimrc
+    " http://www.perlmonks.org/?node_id=540167
+    " http://stripey.com/vim/vimrc.html
+" Add this line at the bottom of /etc/vim/vimrc.local
+    "if filereadable("/opt/bin/settings/vimrc")
+    "    source /opt/bin/settings/vimrc
+    "endif
+
+
+" FIX trailing spaces in maps???
+
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Appearance
+
+" move stuff to .gvimrc ????
+" Or just put in a GUI block here?
+if has('gui_running')
+    winpos 400 50           " GUI window location
+    set lines=60            " GUI # of lines
+    set columns=120         " GUI # of columns
+
+    "colorscheme murphy
+    colorscheme torte
+endif
+
+set background=dark     " Since I usually have blue
+"hi Normal ctermbg=black  " I forget
+
+filetype plugin on
+filetype indent on
+filetype on
+
+set cursorline          " Highlight the screen line of the cursor
+set list                " Display whitespace
+set listchars=tab:>-,trail:~,extends:>,precedes:<   " Prettier :set list display
+" set listchars=tab:>-,trail:~,extends:>,precedes:<,eol:$   " Prettier :set list display
+set number              " Turn on line numbering
+syntax on               " syntax highlighting, :nohlsearch  to turn off temporarily
+set showcmd             " Show (partial) command in status line.
+set showmode            " show current mode down the bottom
+set ruler               " Show the line and column number of cursor
+set laststatus=2        " 2: always
+set statusline=%F\ %m%{&ff}%R%Y%=\ [x%02B]%c,%l/%L(%p%%)\%3n
+"   %F      full path to file (truncated to left as needed to fit)
+"   %m      modified flag [+] (modified), [-] (unmodifiable) or nothing
+"   %{&ff}  Fileformat (unix,dos,mac)
+"   %R      readonly flag ,RO
+"   %Y      filetype ,PERL
+"   %=      split point for left and right justification
+"   x%02B   hex byte under cursor [x62]
+"   %c      current column number
+"   %l      current line number
+"   %L      number of lines in buffer
+"   %p      percentage through buffer
+"   %n      buffer number
+" :help statusline
+
+set autoindent          " Copy indent from current line when starting a new line
+"set smartindent         " Try to be smart about indenting
+set cindent             " Smarter than "smartindent"
+
+set shiftwidth=4        " Number of spaces to use for each (auto)indent
+set tabstop=4           " Number of spaces that a <Tab> inserts
+set softtabstop=4       " Number of spaces that a <Tab> inserts while editing
+set expandtab           " Use spaces instead of tabs
+
+set showmatch           " Show matching brackets
+set matchpairs+=<:>     " % bounce on <> too
+set ignorecase          " Do case insensitive matching
+set smartcase           " Do smart case matching for Upper Case
+
+set incsearch           " Incremental search
+set hlsearch            " hilight searches by default
+
+"set nowrap              " don't wrap lines
+set linebreak           " wrap lines at convenient points
+
+set tildeop             " Make tilde an operator (e.g. ~aw)
+set backspace=eol,start,indent  " <BkSpc> can back-up lines, etc.
+set wildmode=longest:list,full  " Command tab completion
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Saving
+
+set eol                 " Do add trailing EoL if needed
+set autowrite           " Automatically save before commands like :next and :make
+"set hidden              " Hide buffers when they are abandoned
+"set mouse=a             " Enable mouse usage (all modes) in terminals
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Maps
+" The " will be included in the mapping unless you use | for a new command!
+" For custom maps:
+    " :h leader
+    " noremap <Leader>
+
+inoremap <c-i> <tab>|   " CTRL-i inserts tab
+inoremap jj <esc>|       " jj "smash" keys for ESC, or CTRL-[ or CTRL-C
+"inoremap jk <esc>|       " jk "smash" keys for ESC
+"inoremap kj <esc>|       " jk "smash" keys for ESC
+"inoremap ff <esc>|       " ff keys for ESC
+
+" unnamed = unnamed register into clipboard register
+" autoselect = text selected in visual mode into system clipboard (if possible)
+" http://vim.1045645.n5.nabble.com/gvim-auto-copy-selected-text-to-clipboard-td5654560.html
+set clipboard=autoselect,unnamed
+" set clipboard+=unnamed|     " Use "* for all yank, delete, change and put normally in unnamed register
+" set clipboard=unnamed|    " Universal clipboard
+" clipboard=unnamedplus|    " Vim 7.3.74+ ???
+
+" Make clipboard work with ALT-C/ALT-V
+" Maybe should be using "* instead of "+ ???
+vnoremap <a-c> "+y|        " ALT-C Copy in visual mode
+noremap <a-v> "+gP|        " Normal, Visual and Operator-pending
+cnoremap <a-v> "+gP|       " Command line
+inoremap <a-v> <c-r>""+gP| " Insert
+
+" Use CTRL-S for saving, also in Insert mode
+noremap <C-S> :update<CR>
+vnoremap <C-S> <C-C>:update<CR>
+inoremap <C-S> <C-O>:update<CR>
+
+" CTRL-A is Select all
+noremap <C-A> gggH<C-O>G
+inoremap <C-A> <C-O>gg<C-O>gH<C-O>G
+cnoremap <C-A> <C-C>gggH<C-O>G
+onoremap <C-A> <C-C>gggH<C-O>G
+snoremap <C-A> <C-C>gggH<C-O>G
+xnoremap <C-A> <C-C>ggVG
+
+nmap Q gqap|             " Reformat
+vmap Q gq|               " Reformat
+"map Q :q|                " Or...
+"map q: <Nop>|            " Or...
+
+map <F8> :%s/\s\+$//|    " Trim trailing white space
+
+" http://vim.wikia.com/wiki/Insert_current_date_or_time
+if exists("*strftime")
+    nmap <F5> i<C-R>=strftime("%F %T")<CR><Esc>
+    imap <F5> <C-R>=strftime("%F %T") <CR>
+endif
+
+" SOMETHING busted here
+"vmap <tab> >gv|            " make tab in v mode ident/outdent code
+"vmap <s-tab> <gv|          " make tab in v mode ident/outdent code
+"nmap <tab> I<tab><esc>|    " make tab in normal mode ident/outdent code
+"nmap <s-tab> ^i<bs><esc>|  " make tab in normal mode ident/outdent code
+
+set pastetoggle=<F4>|      " F4 toggles (copy &) paste mode
+
+noremap <Space> <PageDown>|  " Page down with space bar like 'less', etc.
+noremap <BS> <PageUp>|       " Page up with backspace
+
+" NEEDED? comment/uncomment blocks of code (in vmode)
+"vmap _c :s/^/#/gi<Enter>
+"vmap _C :s/^#//gi<Enter>
+
+" Move a line of text using ALT+[jk]
+nmap <A-j> ddp|   " Move 1 line down  --or-- :.m+1
+nmap <A-k> ddkP|  " Move 1 line up    --or-- :.m-2
+
+" Swap display and real line operations
+" See also: http://vim.wikia.com/wiki/Move_cursor_by_display_lines_when_wrapping
+" nnoremap k gk
+" nnoremap gk k
+" nnoremap j gj
+" nnoremap gj j
+" But make ARROWS work like that
+nnoremap <Up> gk
+nnoremap <Down> gj
+
+" Smart way to move between windows
+" map <C-j> <C-W>j
+" map <C-k> <C-W>k
+" map <C-h> <C-W>h
+" map <C-l> <C-W>l
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Startup & settings
+
+set nocompatible   " Vim, not vi
+
+set autochdir  " always switch to the current file directory
+set nobackup   " No backup files
+
+" Do NOT switch to the "alternate screen" (see also "altscreen" in .screenrc)
+set t_ti= t_te=
+
+" Jump to last position
+if has("autocmd")
+  au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+    \| exe "normal g'\"" | endif
+endif
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Perl Settings
+" Adapted from http://www.perlmonks.org/?node_id=540167
+
+let perl_extended_vars = 1   " syntax color complex things like @{${"foo"}}
+let perl_include_pod = 1     " my perl includes pod
+
+" check perl code with :make
+autocmd FileType perl set makeprg=perl\ -c\ %\ $*
+autocmd FileType perl set errorformat=%f:%l:%m
+
+" Tidy selected lines (or entire file) with _t:
+"nnoremap <silent> _t :%!perltidy -q<Enter>
+"vnoremap <silent> _t :!perltidy -q<Enter>
+
+" Deparse obfuscated code
+"nnoremap <silent> _d :.!perl -MO=Deparse 2>/dev/null<cr>
+"vnoremap <silent> _d :!perl -MO=Deparse 2>/dev/null<cr>
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Bash Settings
+" See also: http://www.vim.org/scripts/script.php?script_id=365
+
+let g:is_bash=1         " .sh = bash
+
+" check shell code with :make
+autocmd FileType sh set makeprg=bash\ -n\ %\ $*
+autocmd FileType sh set errorformat='%f:\ %s\ %l:\ %m'
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+

@@ -1,0 +1,26 @@
+#!/bin/sh
+# mount-iso--Trivial wrapper to mount an ISO image
+
+# $Id: mount-iso 1106 2005-12-11 20:28:39Z root $
+# $URL: file:///home/SVN/usr_local_bin/mount-iso $
+
+VER='$Version: 1.2 $' # JP Vossen <jp@jpsdomain.org>
+
+CAT='/bin/cat'
+if [ -z "$1" -o -z "$2" -o "$1" = "-h" -o "$1" = "--help" ]; then
+    ${CAT} <<-EoN
+
+	usage: $0 <ISO Image> <mount location>
+	    e.g.
+	    $0 cdrom.iso /tmp/myiso
+
+	Mount an ISO image in a local directory using a loopback.
+EoN
+    exit 1
+fi
+
+# if not exist <mount location>, make it
+[ -d "$2" ] || mkdir -p "$2"
+
+# Do the work
+mount -t iso9660 -o loop "$1" "$2"

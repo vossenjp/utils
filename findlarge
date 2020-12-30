@@ -1,0 +1,13 @@
+#!/bin/sh -
+# Find "large" files
+
+#MAX_SIZE="10000k"    # 10M
+MAX_SIZE="100000k"    # 100M
+#MAX_SIZE="1000000k"  # 1G
+
+#find / /boot /home /var -xdev -size +2000k -ls
+
+# find /home -type f -a -size +2000k -printf '%s\t%p\t%u\t%g\n'
+find / \( -path /proc -o -path /mnt -o -path /tmp -o -path /scratch \) -prune \
+  -o -type f -a -size +$MAX_SIZE -printf '%s\t%p\t%u\t%g\n' | sort -rn
+

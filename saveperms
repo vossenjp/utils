@@ -1,0 +1,27 @@
+#!/bin/sh
+# saveperms -- Save permissions for a directory structure
+# v1.0 2001-06-12 JP Vossen (jp@jpsdomain.org)
+
+# $ID$
+# $Url$
+
+# Must run as root
+if [ "$UID" -ne "0" ]; then
+    printf "You must run this script as root."
+    exit 1
+fi
+
+if [ -z "$1" -o "$1" = "-h" ]; then
+    printf "\nSave owner, group and permissions for a directory structure in\n"
+    printf "path/to/dir/fixperms\n"
+    printf "\n\tusage: $0 {path/to/dir}\n"
+    exit 2
+fi
+
+if [ ! -d "$1" ]; then
+    printf "\n$1 is not found or is not a directory!\n"
+    exit 3
+fi
+
+#find $1 -printf "chmod %m %p\n"
+find $1 -printf "chmod %m %p && chown %u.%g %p\n" > $1/fixperms

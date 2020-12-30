@@ -1,0 +1,130 @@
+#!/bin/bash -
+# grow_mirrored_disk--Grow a Linux software mirror after swapping in larger
+#                     hard drives.
+
+# See also:
+    # angstrom:/root/grow-boot.angstrom
+    # /opt/bin/disk-and-partitions
+
+
+echo 'This script is NOT stand-alone, nor is it trivial to use, since you'
+echo 'need to have other parts in place and you need to have figured out'
+echo 'some numbers!  RAID and LVM names are HARD-CODED!'
+echo 'Go CAREFULLY read: H:\@PROJECTS\@_Completed\Hard drive upgrade cascade 2010-11.txt'
+
+exit 99
+
+# PRE-REQs:
+# First larger drive in + replace_mirrored_disk part1 & part2
+# Second larger drive swapped in + replace_mirrored_disk part1 & part2
+# This script picks up waiting for 'replace_mirrored_disk part2' to finish!
+
+PS4='+xtrace $LINENO: '
+DATE='date +%Y-%m-%d_%H:%M:%S%z'
+
+RAID_VOL='/dev/md1'
+LOGICAL_VOL='/dev/vg_griffin/lv_root'
+#NEW_PE_SIZE='...'  # See below
+
+
+# Make sure various stuff isn't running
+$DATE
+/etc/init.d/monit stop
+/etc/init.d/nullmailer stop
+mv -v /usr/sbin/fcheck /usr/sbin/fcheck.DISABLED
+
+set -xv
+# --------------------------------------------------------------------------
+# Wait until the resync for the new big drive is done
+$DATE
+cat /proc/mdstat
+time mdadm -v --wait $RAID_VOL
+cat /proc/mdstat
+
+
+# --------------------------------------------------------------------------
+# RAID1 bitmap is BAD when growing!!!
+$DATE
+mdadm -v --grow $RAID_VOL --bitmap none
+cat /proc/mdstat
+
+# Grow the RAID1 volume
+$DATE
+mdadm -v --grow $RAID_VOL --size max
+cat /proc/mdstat
+
+# Wait until we've grown
+$DATE
+time mdadm -v --wait $RAID_VOL
+
+# Put the bitmap back
+    # Don't bother, it's a bit slower:
+        # http://askubuntu.com/questions/50618/switching-mdadm-to-an-external-bitmap
+#$DATE
+#mdadm -v --grow $RAID_VOL --bitmap internal
+
+# Check the stats
+$DATE
+cat /proc/mdstat
+
+
+# --------------------------------------------------------------------------
+# Check the LVM physical volume
+$DATE
+pvdisplay | grep 'Free PE'
+pvdisplay
+
+# Grow the LVM PV
+$DATE
+pvresize --verbose $RAID_VOL
+
+# Check the LVM physical volume
+$DATE
+pvdisplay | grep 'Free PE'
+pvdisplay
+
+
+# --------------------------------------------------------------------------
+# Check the LVM logical volume
+$DATE
+lvdisplay | grep 'LV Size'
+pvdisplay | grep 'Free PE'
+
+# Grow it, based on "Free PE" -1600 from 'pvdisplay'
+NEW_PE_SIZE=$(pvdisplay | perl -ne 'print $1-1600 if m/Free PE\s+(\d+)/;')
+$DATE
+time lvresize --verbose -l +$NEW_PE_SIZE $LOGICAL_VOL
+
+# Check the LVM logical & physical volume
+$DATE
+lvdisplay | grep 'LV Size'
+pvdisplay | grep 'Free PE'
+pvdisplay
+lvdisplay
+
+
+# --------------------------------------------------------------------------
+# Check the disk
+$DATE
+df -hl
+
+# Grow the ext3 file system
+$DATE
+time resize2fs -p $LOGICAL_VOL
+
+# Check the disk
+$DATE
+df -hl
+
+
+# --------------------------------------------------------------------------
+$DATE
+grub-install /dev/sdb
+grub-install /dev/sda
+
+
+# --------------------------------------------------------------------------
+$DATE
+/etc/init.d/monit start
+/etc/init.d/nullmailer start
+mv -v /usr/sbin/fcheck.DISABLED /usr/sbin/fcheck

@@ -1,0 +1,44 @@
+# JP screenrc file
+# $Id: screenrc 1822 2012-08-27 05:27:08Z root $
+
+# Multiuser settings (see also aclumask)
+multiuser on
+# aclgrp eng tle,chidam
+# acladd eng
+# aclchg eng -w
+
+# Change the INSANE C-a default to C-n (use C-n n to send literal ^N)
+escape ^Nn
+
+# This is how one can set a reattach password:
+# password ODSJQf.4IJN7E    # "1234"
+
+# Yes annoying audible bell, please
+vbell off
+
+# Do NOT terminate screen on a hangup
+autodetach on
+
+# don't display the copyright page
+startup_message off
+
+# emulate .logout message
+pow_detach_msg "Screen session of \$LOGNAME \$:cr:\$:nl:ended."
+
+# make the shell in every window a login shell
+shell -$SHELL
+
+# I use scrollback in my terminal programs
+defscrollback 0
+
+# Turn on 256-colors (needs --enable-colors256)
+attrcolor b ".I"
+termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+defbce "on"
+
+# http://www.gnu.org/software/screen/manual/screen.html#Redisplay
+# http://wiki.linuxquestions.org/wiki/Screen
+# Support alternate screens so that, for example, when you 
+# quit out of vi, the display is redrawn as it was before vi
+# redrew the full screen. (See also vimrc)
+altscreen on

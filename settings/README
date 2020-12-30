@@ -1,0 +1,24 @@
+
+
+# /etc/profile
+#     Global profile file for Bourne and similar *LOGIN* shells
+# /etc/bashrc (RH)
+# /etc/bash.bashrc (Debian)
+#     Global environment file for interactive bash sub-shells
+# /etc/inputrc
+#     Global GNU Readline configuration
+# ~/.bashrc
+#     Personal environment file for interactive bash sub-shells
+# ~/.bash_profile
+#     Personal profile for bash login shells [Verify this sources ~/.bashrc 
+#     then ignore it.]
+# ~/.profile
+#     Personal profile file for Bourne login shells; only used by bash if 
+#     ~/.bash_profile and ~/.bash_login are not present (ignore)
+# bash_profile (path varies)
+#     Customizations for login shells
+# bashrc (path varies)
+#     Customizations for interactive shells
+# inputrc (path varies)
+#     Customizations for readline configuration
+

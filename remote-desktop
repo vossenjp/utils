@@ -1,0 +1,40 @@
+#!/bin/bash -
+# remote-desktop--Fire up a remote desktop session on the remote side
+# JP 2019-11-25 Mon
+# $URL: file:///home/SVN/usr_local_bin/remote-desktop $
+# $Id: remote-desktop 2135 2020-09-26 19:33:58Z root $
+
+# TO-DO:
+# SSH wrapper [1]
+# Passwords
+
+# Vino worked well for Mint-17, but after upgrade to Mint-19 was a total FAIL!
+# See: https://unlockforus.com/remotely-control-linux-mint-18-x-vnc-server-x11vnc-setup/
+
+X11VNC='/usr/bin/x11vnc'
+LOG='/var/log/x11vnc.log'
+
+[ -x "$X11VNC" ] || {
+    echo "FATAL: '$X11VNC' not found or not executable!"
+    echo 'Maybe try: apt install x11vnc'
+    exit 1
+}
+
+echo "This has NO PASSWORD, and will overwrite the log in '$LOG..."
+echo "It will only run once, when the remote side disconnects this (& access) will end."
+sudo x11vnc -display :0 -dontdisconnect -auth guess -repeat -nopw -rfbport 5900 -o $LOG
+
+
+# [1] If/when I feel like doing an SSH tunnel
+# Re: [PLUG] Remote to an Ubuntu desktop
+# 2020-07-12 Sun 11:14 AM: rosatoj@gmail.com
+# Your box needs Xvfb, x11vnc and a window manager. In short it tunnels vnc
+# to your host (since x11vnc security is ehh) and you use a vncviewer to open
+# a small window session with Xvfb (virtual frame buffer).
+# ---- Start script ----
+#!/bin/bash
+#PRG=/bin/openbox
+##PRG=/usr/bin/twm
+#ssh -t -L 5567:localhost:5567 username@box "nohup x11vnc -create -env FD_PROG="$PRG" -env X11VNC_FINDDISPLAY_ALWAYS_FAILS=1 -env X11VNC_CREATE_GEOM=1024x768x16 -gone 'pkill Xvfb' -bg -noxinerama -nopw -noxdamage -noipv6 -rfbport 5567" &
+# ---- End script ----
+# Client: vncviewer -depth 8 -encodings "copyrect tight hextile" localhost:5567

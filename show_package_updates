@@ -1,0 +1,82 @@
+#!/bin/bash -
+# show_package_updates--Trivially check for new packages
+# $Id: show_package_updates 2139 2020-09-26 19:44:24Z root $
+# $URL: file:///home/SVN/usr_local_bin/show_package_updates $
+
+echo "$(hostname):" 'running $Id: show_package_updates 2139 2020-09-26 19:44:24Z root $'
+
+# Called from cron with --wait for random wait (except on drake) so not
+# everything is updating at once
+if [ "$1" == '--wait' ]; then
+    [ "$HOSTNAME" == 'drake' ] || /opt/bin/waitfor 500
+fi
+
+# Display IPAs; useful for remote and/or DHCP machines
+/sbin/ifconfig | grep -o 'inet .*' | grep -v 'inet.*127.0.'
+perl -ne 'print qq(\u$1: \u$2\n) if m!^deb http://.*?/(\w+)/?\s+(\w+)\s+main!;' /etc/apt/sources.list
+uname -a
+echo ''
+
+# Clean up the cache, then look for updates, but filter out some noise
+##/usr/bin/aptitude clean > /dev/null
+#/usr/bin/aptitude update \
+#  | egrep -v '^Get:|^Hit|^Ign|^Reading|^Building|^Initializing'
+#echo ''
+#case "$HOSTNAME" in
+#    ntp2* )  # Newer aptitude 0.8.7 prompts even on --simulate
+#        echo "n" | /usr/bin/aptitude --simulate full-upgrade \
+#          | egrep -v '^Reading|^Building|^Initializing|^Do you want to continue'
+#    ;;
+#    * )
+#        #/usr/bin/aptitude --simulate full-upgrade
+#        /usr/bin/aptitude --simulate full-upgrade \
+#          | egrep -v '^Reading|^Building|^Initializing|^Do you want to continue'
+#    ;;
+#esac
+
+echo 'Cleaning and updating:'
+sudo apt clean  2>&1 | egrep -v 'WARNING: apt does not|^$'
+sudo apt update 2>&1 \
+  | egrep -v '^Reading|^Building|^Get:|^Ign:|^Hit:|WARNING: apt does not|^$'
+
+echo 'Packages that could be upgraded, per `apt list --upgradable`:'
+apt list --upgradable  2>&1 | egrep -v 'WARNING: apt does not|^$' \
+  | perl -pe 's!^(.*?)/\S+ (\S+) \w+ \[upgradable from: (\S+)\]!$1\t$3 -> $2!;'
+
+echo ''
+echo 'Checking auto-remove details:'
+# See what will be auto-removed!  Should only be old kernels, but good to check
+autoremove="$(/usr/bin/apt-get autoremove --purge --dry-run \
+  | egrep -v '^Reading|^Building|^Initializing|^Purg|^Do you want to continue')"
+running_kernel="$(uname -r)"
+echo ''
+echo "$autoremove"
+echo "$autoremove" | grep -q "$running_kernel" && {
+    echo ''
+    echo "Running kernel '$running_kernel' but it could be autoremoved; that would be BAD:"
+    echo "$autoremove" | grep "$running_kernel"
+}
+
+# 2018-01-07: even newer = Noisy and hard to read
+#echo ''
+#echo 'Packages that could be upgraded, per apt:'
+#apt list --upgradable | egrep -v '^Listing|^N:|^WARNING: apt does not have a stable CLI interface'
+
+# 2016-01-09: much more useful
+echo ''
+echo 'Packages that could be upgraded, per aptitude search:'    # BEST!
+aptitude search '~U'
+
+echo ''
+echo 'Packages ON HOLD that could/should be upgraded:'          # Need to know...
+aptitude search '~U~ahold'
+
+echo ''
+echo 'All packages ON HOLD:'                                    # Need to know...
+aptitude search '~ahold'
+
+# 2016-01-16 Sat:
+[ -r /var/run/reboot-required ] && {
+    echo ''
+    cat /var/run/reboot-required
+}

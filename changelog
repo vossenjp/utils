@@ -1,0 +1,33 @@
+#!/bin/bash -
+# changelog--Trivial system CHANGELOG wrapper
+
+# $Id: changelog 1488 2008-05-29 21:47:54Z root $
+# $URL: file:///home/SVN/usr_local_bin/changelog $
+
+set -e  # Bail out if any command fails
+
+CHANGELOG='/root/CHANGELOG.txt'
+TEMP_FILE="/root/CHANGELOG.$RANDOM$RANDOM$$"
+EDIT_COMMAND='nano +4,3 --smooth --const --nowrap --suspend'
+
+# Make sure files exists, then backup
+[ -f $CHANGELOG ] || touch $CHANGELOG
+cat $CHANGELOG > $CHANGELOG.old
+
+# Add header for today's changes to temp file
+echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~' \
+ > $TEMP_FILE
+date "+%Y-%m-%d %H:%M %z; $USER" >> $TEMP_FILE
+echo -e "\n* \n\n"               >> $TEMP_FILE
+cat $CHANGELOG                   >> $TEMP_FILE
+
+# Do the editing
+$EDIT_COMMAND $TEMP_FILE
+
+# Update the change log
+cat $TEMP_FILE > $CHANGELOG
+rm  $TEMP_FILE
+chmod 0644 $CHANGELOG*
+
+# Sanity check display, in case temp files show up or something
+\ls -l $CHANGELOG*

@@ -1,0 +1,230 @@
+#!/bin/bash -
+# addheader--Add a header at the top of an existing file
+
+# $Id: addheader 899 2005-05-29 06:48:41Z root $
+# $URL: file:///home/svn/usr_local_bin/addheader $
+
+VERSION='$Version: 1.1 $'
+COPYRIGHT='Copyright 2005 JP Vossen (http://www.jpsdomain.org/)'
+LICENSE='GNU GENERAL PUBLIC LICENSE'
+
+# Set a sane/secure IFS (note this is bash syntax only--not portable!)
+IFS=$' \t\n'
+
+# Set a sane/secure path and export it
+PATH=/usr/local/bin:/bin:/usr/bin
+export PATH
+
+# Set a sane/secure umask variable and use it
+# 002 results in 774 perms, 077 results in 700 perms, etc...
+UMASK=002
+umask $UMASK
+
+# GLOBAL variables are in UPPER case
+# local variable are in lower case
+# Functions are in Mixed Case
+#----------------------------------------------------------
+# Define functions
+
+function Usage {
+    # Note use of <<- 'here document' style which strips leading TABs but
+    # not leading space, allowing for more or less proper indenting.
+
+    # Follow the classic man page format
+    cat <<-EoN
+	NAME
+	    $PROGRAM--Add a header at the top of an existing file
+
+	SYNOPSIS
+	    $PROGRAM [OPTIONS] -i file [-H file]
+
+	OPTIONS
+	    -i = File to which to add header, required
+	    -H = Header file (use STDIN if not specified)
+	    -h = This usage
+	    -v = Be verbose
+	    -V = Show version, copyright and license information
+
+	DESCRIPTION
+	    Trivially add a header to a single existing file, getting the
+	    header from STDIN or a specified file (-H). The file is
+	    updated in place using temp files, which is slower and
+	    requires more space but preserves all original file attributes
+	    including inode number and thus hard links.
+
+	    e.g.
+	        head -1 big_file | $PROGRAM -i grepped_output.csv
+	        $PROGRAM -v -i greped_output -H stock_header
+
+	AUTHOR / BUG REPORTS
+	    JP Vossen (jp {at} jpsdomain {dot} org)
+	    http:www/jpsdomain.org
+
+	COPYRIGHT & LICENSE
+	    $COPYRIGHT
+	    $LICENSE
+
+	SEE ALSO
+	    head(1), tail(1), grep(1)
+	EoN
+} # end of function Usage
+
+
+function ProcessOptions {
+    # ProcessOptions "$@"
+    # Must pass "$@" to the function or else it can't see anything!
+
+    # Use getops with leading : to suppress bad input error message
+    while getopts ':i:H:hvV' opt; do
+        case $opt in
+            i ) TARGET=$OPTARG ;;
+            H ) HEADER_FILE=$OPTARG ;;
+            v ) VERBOSE='yes' ;;
+            V )
+                Version
+                exit 0
+                ;;
+            h )
+                Usage
+                exit 0
+                ;;
+            '?' ) Error "\nBad input:\nTry $PROGRAM -h" 1 ;;
+        esac
+    done
+
+    # Remove all the processed options and arguments
+    # Don't care in this case...
+    shift $(($OPTIND - 1))
+} # end of function ProcessOptions
+
+
+function Version {
+    # Use printf as it's more flexible and consistent than echo
+    printf "$PROGRAM version $VERSION\n\t$COPYRIGHT\n\t$LICENSE\n"
+} # end of function Version
+
+
+function Verbose {
+    # verbose 'message to print'
+    # If verbose is define (e.g. -v) be chatty
+    [ "$VERBOSE" = "yes" ] && printf "$*"
+} # end of function Verbose
+
+
+function MakeTempFile {
+    # MakeTempFile path/to/name-prefix
+    # Return a new temp file name in TMPFILE
+    # $(command) is the new way to do `command`
+
+    # First try mktemp, if that fails use uradom, if that fails give up
+    TMPFILE=$(mktemp $1.XXXXXXXXX) \
+      || TMPFILE=$1.$(cat /dev/urandom | od -x | tr -d ' ' | head -1) \
+      || Error "\aFATAL ERROR: can't create temp file!\n" 2
+} # end of function MakeTempFile
+
+
+function Error {
+    # Error 'error message' [fatal error code]
+    # Expects an error message and an optional error code to return
+    # (if fatal)
+
+    # Print the message to STDERR
+    printf "\a$1\n" 1>&2
+
+    # If an error code is supplied, we're fatal, exit with that code
+    if [ -n "$2" ]; then
+        exit $2
+    fi
+} # end of function Error
+
+
+function Cleanup {
+    # Called in the trap statement to clean things up
+    Remove $TARGET_TMP
+    [ "$BUILT_HEADER" = 'yes' ] && Remove $HEADER_FILE
+} # end of function Cleanup
+
+
+function Remove {
+    # Remove /path/to/file-to-remove
+    # If the file exists, remove it or complain
+    [ -f $1 ] && command rm $1 || Error "\aERROR: can't remove '$1'!\n"
+} # end of function Remove
+
+# Cleanup after ourselves at exit or if interrupted
+trap Cleanup QUIT HUP INT PIPE QUIT TERM
+
+###########################################################
+# Main
+
+# For debugging uncomment the next line, use 'set +o xtrace' to turn off:
+# set -o xtrace
+
+# Useful things to have before checking options
+PROGRAM=$(basename $0)             # What's our name?
+DATEFORMAT='+%Y-%m-%d %H:%M:%S %Z' # Almost ISO-8601, but human readable
+
+# Variables above can be overwritten when we process the options using getops
+# Must pass "$@" to the function or else it can't see anything!
+ProcessOptions "$@"
+
+# Do some sanity Checks
+# Is the target file readable and writable?
+if [ -r "$TARGET" -a -w "$TARGET" ]; then
+    : # Do nothing, but this is easier to read than negating the conditions
+else
+    Error "FATAL ERROR: '$TARGET' missing, not readable or not writable!\n" 3
+fi  # end of target file check 
+
+# Check the header
+if [ ! -s "$HEADER_FILE" ]; then
+    # We don't already have a header from -H, so try to get it from STDIN
+
+    # First make a tempfile to put it in
+    MakeTempFile $TARGET.header
+    HEADER_FILE=$TMPFILE
+
+    # Build the header file from STDIN
+    while read stdin; do
+        # Add back the \n that read strips and append to header temp file
+        printf "$stdin\n" >> $HEADER_FILE
+    done  # reading STDIN
+
+    # IF we build it, we need to remove it also
+    BUILT_HEADER='yes'
+
+    # Double check
+    if [ ! -s "$HEADER_FILE" ]; then
+        # OK, we're toast
+        Error "\aFATAL ERROR: Missing header!\n" 4
+    fi  # End of double checking header
+fi  # End of header check
+
+# Make a tempfile for the target text
+MakeTempFile $TARGET.main
+TARGET_TMP=$TMPFILE
+
+# OK, we're pretty sure we can actually DO something now
+Verbose "$PROGRAM $VERSION starting: $(date "${DATEFORMAT}")\n"
+
+Verbose "Copy '$TARGET' to temp file '$TARGET_TMP'\n"
+cat $TARGET > $TARGET_TMP \
+  || Error "\aFATAL ERROR: can't cat '$TARGET' -> '$TARGET_TMP'!\n" 5
+
+
+Verbose "Add the header"
+cat $HEADER_FILE > $TARGET \
+  || Error "\aFATAL ERROR: can't cat header '$HEADER_FILE' -> main '$TARGET'!\n" 6
+
+Verbose "Copy the temp file back into '$TARGET'\n"
+# This preserves file attributes (including inodes and thus hard links)
+# at the expense of speed and file system space and activity (which can be
+# significant for large files).
+cat $TMPFILE >> $TARGET \
+  || Error "\aFATAL ERROR: can't cat temp '$TARGET_TMP' -> main '$TARGET'!\n" 7
+
+# Remove the tmp files
+Cleanup
+
+Verbose "$PROGRAM finished: $(date "${DATEFORMAT}")\n"
+

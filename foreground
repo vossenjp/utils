@@ -1,0 +1,50 @@
+#!/bin/bash -
+# foreground--Bring a named window to the foreground in a GUI, else run it
+# $Id: foreground 2073 2018-12-15 21:54:21Z root $
+# REQUIRES: wmctrl, gawk (\< \> word boundary patterns) or tweak for mawk
+
+# Usage: $0 <process name>
+# e.g.:  $0 roxterm
+
+
+# Make sure wmctrl is executable
+WMCTRL='/usr/bin/wmctrl'
+[ -x "$WMCTRL" ] || {
+    echo 'FATAL: '$WMCTRL' not found or not executable.  Please install it.'
+    exit 1
+}
+# Make sure we have gawk
+AWK='/usr/bin/gawk'
+[ -x "$AWK" ] || {
+    echo 'FATAL: '$AWK' not found or not executable.  Please install it.'
+    exit 1
+}
+
+# Get argument and trivial sanity check
+process="$1"
+[ -n "$process" -o "$process" = '-h' -o "$process" = '--help' ] || {
+    echo 'FATAL: You must provide a process name to bring to the foreground.'
+    exit 2
+}
+
+if [ -f "$HOME/wmctrl.$process" ]; then
+    # We have an override file for some reason, use that
+    # Create the file by finding the code in the first column of: /usr/bin/wmctrl -lp | grep 'jp@weber6'
+    # Then something like: echo '0x03400007' > ~/wmctrl.roxterm
+    echo "Using '$HOME/wmctrl.$process' override file!"
+    $WMCTRL -ia "$(< "$HOME/wmctrl.$process")"
+else
+    # Get the *first* PID we see for the process.
+    # If you have more than one, too bad...
+    pid=$(pgrep --newest --full --uid=$USER "^$process")
+
+    # If we have a PID for the process
+    if [ "$pid" ]; then
+        # Activate it (bring to foreground)
+        $WMCTRL -ia "$($WMCTRL -lp | $AWK "/\<$pid\>/ {print \$1}")"
+        # Note awk \< \> are "word boundary" anchors
+    else
+        # No PID, so fire up a new process
+        nohup "$process" &
+    fi
+fi

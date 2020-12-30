@@ -1,0 +1,294 @@
+#!/bin/bash -
+# deb--wrapper/reminder for various apt* and dpkg commands
+
+# $Id: deb 2111 2020-04-05 20:04:12Z root $
+
+#PROGRAM=$(basename $0)             # What's our name?
+PROGRAM=${0##*/}
+VERSION='$Id: deb 2111 2020-04-05 20:04:12Z root $'
+COPYRIGHT='Copyright 2007-2012 JP Vossen (http://www.jpsdomain.org/)'
+LICENSE='GNU GENERAL PUBLIC LICENSE v2'
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Help
+# Called like:  Usage
+function Usage {
+    # Note use of <<- 'here document' style which strips leading TABs but
+    # not leading space, allowing for more or less proper indenting.
+
+    # Follow the classic man page format
+    less -n <<-EoN
+	NAME
+	    $PROGRAM--wrapper/reminder for various apt* and dpkg command
+
+	SYNOPSIS
+	    $PROGRAM [command] [arguments]
+
+	COMMANDS (use '$PROGRAM' with no arguments for quick list)
+	* The | in upd|ate means you only need to type the "upd" part.
+	* <names> means one or more space delimited package names
+	* <egrep> means a single egrep regular expression (e.g. 'zip|arj')
+
+	$(perl -ne 'print if s/^\s*# USAGE: /    /;' $0)
+
+	    Examples:
+	        $PROGRAM update
+	        $PROGRAM find zip
+	        $PROGRAM install zip
+
+	DESCRIPTION ($VERSION)
+	    The Debian Advanced Package Tool (apt) is a very powerful and flexible
+	    packaging tool.  But its functions are scattered among a number of
+	    tools and it's hard to keep track of what's where, especially coming
+	    from yum, which is very simple.  Just as rpm is the basis for yum,
+	    dpkg is the basis for apt, but like yum apt has a package cache and
+	    various ways to manipulate it.  This is just a wrapper to unify the
+	    tools.
+
+	AUTHOR / BUG REPORTS
+	    JP Vossen (jp {at} jpsdomain {dot} org)
+	    http://www.jpsdomain.org/
+
+	COPYRIGHT & LICENSE
+	    $COPYRIGHT
+	    $LICENSE
+
+	SEE ALSO
+	    * apt-file
+	    * http://maketecheasier.com/become-an-apt-guru/2009/02/24
+	    * http://www.debian.org/doc/manuals/apt-howto/index.en.html
+	    * https://web.archive.org/web/20140820020008/http://nakedape.cc/wiki/PackageManagerCheatsheet
+	    * http://www.pthree.org/2007/08/12/aptitude-vs-apt-get/
+	    * http://www.togaware.com/linux/survivor/Wajig_Overview.shtml
+	      Wajig is similar to this script and is far more comprehensive, but
+	      also much larger and more complicated.
+	    * aptitude is more powerful than apt-get, and includes some features of
+	      apt-cache as well (but it likes to install "recommended" packages by
+	      default (http://people.debian.org/~dburrows/aptitude-doc/en/ch02s04s05.html#configRecommends-Important)).
+	    * aptitude is more powerful searching than apt-cache but it's also
+	      tricker to use.  See http://algebraicthunk.net/~dburrows/projects/aptitude/doc/en/ch02s03s05.html#tableSearchTermQuickGuide
+	    * Use of aptitude instead of apt-get is recommended:
+	      http://www.debian.org/doc/manuals/reference/ch-package.en.html
+	      http://www.debian.org/doc/FAQ/ch-pkgtools.en.html#s-aptitude
+	    * /var/log/aptitude
+	    * man pages for apt-get, aptitude, apt-cache, apt-query, dpkg,
+	      and even rpm and yum
+	    * localepurge and deborphan are great too
+	EoN
+} # end of function Usage
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Show the command to run, then run it
+# Called like:  Run foo
+function Run {
+    echo "$*"
+    eval $*
+}
+
+
+###########################################################
+# Main
+
+# These are the programs we need
+apt_get="$(type -P aptitude)"     # Use aptitude if available
+# If aptitude is available, do *not* treat recommendations as dependencies
+# when installing new packages!  If it's not there, fall back to 'apt-get'.
+[ $apt_get ] && apt_get="$apt_get --without-recommends" || apt_get='apt-get'
+apt_cache='apt-cache'  # See also http://algebraicthunk.net/~dburrows/projects/aptitude/doc/en/ch02s03s05.html#tableSearchTermQuickGuide
+dpkg='dpkg'
+dpkg_query='dpkg-query'
+egrep='egrep'
+sort='sort'
+# Use less if we can, else use more
+less=$(type -P less)
+#[ $less ] && less="$less --quit-if-one-screen --no-init" || less='more'
+[ $less ] && less="$less --no-init" || less='more'
+
+# Figure out what to do and go do it
+case "$1" in
+
+    # USAGE: upd|ate              # Update the package cache (do this at least weekly)
+    upd* )
+        Run "sudo $apt_get update"
+    ;;
+
+    # USAGE: che|ck,chk           # Check for available upgrades
+    che*|chk )
+        # apt_get -s, --simulate, --just-print, --dry-run, --recon, --no-act
+        # $apt_get --simulate dist-upgrade
+        Run "sudo $apt_get --simulate upgrade"
+    ;;
+
+    # USAGE: upche|ck,upchk       # Update, then check for available upgrades
+    upche*|upchk )
+        $0 update
+        $0 check
+    ;;
+
+    # USAGE: upg|rade             # Upgrade all installed packages
+    upg* )
+        shift
+        Run "sudo $apt_get safe-upgrade $*"
+    ;;
+
+    # USAGE: dist|-upgrade,full   # Update then really upgrade all installed packages
+    dist*|full )
+        $0 update                 # Update first
+        Run "sudo $apt_get dist-upgrade"
+    ;;
+
+    # USAGE: fullall              # Update, keep-all and dist-upgrade
+    fullall )
+        $0 update                 # Update first
+        Run "sudo $apt_get keep-all"   # Remove any "hold"
+        Run "sudo $apt_get dist-upgrade"
+    ;;
+
+    # USAGE: hold <pkg (pkg...)>  # Prevent some packages from being upgraded
+    # USAGE: hold kernel <ver>    # Prevent kernel packages from being upgraded
+    hold )
+        [ "$2" = 'kernel' ] && {
+            Run "sudo $apt_get hold linux-generic linux-headers-generic linux-image-generic linux-headers-$3 linux-headers-$3-generic linux-image-$3-generic"
+        } || {
+            shift
+            Run "sudo $apt_get hold $*"
+        }
+    ;;
+
+    # USAGE: se|arch;find <regex> # Search for <regex> in the package cache
+    se*|find )
+        # aptitude search
+        shift
+        Run "$apt_cache search $* | $sort | $less -p '$*'"
+    ;;
+
+    # USAGE: sh|ow,info <names>   # Show details about package <names>
+    sh*|info )
+        shift
+        Run "$apt_cache show $* | $less"
+    ;;
+
+    # USAGE: showpkg <names>      # Show name and various depends info for <names>
+    showpkg )
+        shift
+        Run "$apt_cache showpkg $* | $less"
+    ;;
+
+    # USAGE: in|stall <names>     # Install package <names>
+    in* )
+        shift
+        Run "sudo $apt_get install $*"
+    ;;
+
+    # USAGE: rem|ove <names>      # Remove package <names>
+    rem* )
+        shift
+        Run "sudo $apt_get remove $*"
+    ;;
+
+    # USAGE: what <egrep>         # Show the name and version of <egrep> if installed
+    # USAGE: which,installed,list <egrep> # Same as previous
+    what|which|installed|list )
+        shift
+        [ "$1" ] && and_maybe_grep="| $egrep -i $1"
+        # dpkg -l | --list package-name-pattern ... = List packages matching given pattern.
+        # dpkg-query -W | --show
+        # Run "$dpkg_query --show | perl -pe 's/^(.*?)\t(?:\d:)?(.*)\$/\$1\t\$2/;' \
+        #  | sort $and_maybe_grep"  ### THIS WAS getting previously-installed-but-removed packages
+        Run "$dpkg_query --list | grep '^.i' | sort $and_maybe_grep \
+          | awk '{OFS = \"-\"; print \$2,\$3}'"
+    ;;
+
+    # USAGE: files <names>        # List the files installed by package <names>
+    files )
+        shift
+        # dpkg -L | --listfiles
+        Run "$dpkg -L $* | $less"
+    ;;
+
+    # USAGE: dep|ends <names>     # Show packages <names> depends on
+    dep* )
+        shift
+        Run "$apt_cache depends $* | $less"
+    ;;
+
+    # USAGE: rdep|ends <names>    # Show other packages that depend on <names>
+    rdep* )
+        shift
+        Run "$apt_cache rdepends $* | $less"
+    ;;
+
+    # USAGE: pro|vides <names>    # Show the capability that <names> provides
+    pro* )
+        echo 'Not implemented yet'
+        exit 2
+    ;;
+
+    # USAGE: whatpro|vides <file> # Show the package that provides <file>
+    whatpro* )
+        # dpkg_query -S | --search
+        Run "$dpkg_query --search $2"
+    ;;
+
+    # USAGE: pol|icy <file>       # Show the install policy (source repo, ver) for <file>
+    pol* )
+        Run "$apt_cache policy $2"
+    ;;
+
+    # USAGE: ppa ppa:<user/ppa>   # Add the given PPA
+    ppa )
+        [ -x /usr/bin/add-apt-repository ] && {
+            Run "sudo add-apt-repository $2"
+        } || {
+            echo "Sorry, 'add-apt-repository' not found, you'll have to install manually."
+        }
+    ;;
+
+    # USAGE: clean                # Remove downloaded package files from the cache
+    clean )
+        Run "sudo $apt_get clean"
+    ;;
+
+    # USAGE: autoclean            # Remove obsolete packages from the cache
+    autoclean )
+        Run "sudo $apt_get autoclean"
+    ;;
+
+    # USAGE: purge                # Purge the local cache, forces complete re-download
+    purge )
+        Run "sudo $apt_get purge"
+    ;;
+
+    # USAGE: stats                # Show package cache stats
+    stats )
+        Run "$apt_cache stats"
+    ;;
+
+    # USAGE: changelog            # Show package changes
+    changelog )
+        # lynx http://master.debian.org/cgi-bin/get-changelog\?package=$1
+        Run "aptitude changelog $*"
+    ;;
+
+
+    # USAGE: (verify              # Verify all installed packages)
+    verify )
+        # Use debsums
+        echo "Like rpm -Va, but not implemented yet--use debsums"
+    ;;
+
+
+    -h|--help|help|man|'?' )
+        Usage
+        exit 0
+    ;;
+
+    * )
+        echo -e "\nBad command:  try $PROGRAM -h"
+        echo "Commands:"
+        perl -ne 'print if s/^\s*# USAGE: /\t/;' $0
+        exit 1
+    ;;
+
+esac

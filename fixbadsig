@@ -1,0 +1,4 @@
+#!/bin/bash -
+# Fix BADSIG and other crap
+
+aptitude clean; rm -rf /var/lib/apt/lists; mkdir -p /var/lib/apt/lists/partial; aptitude clean; aptitude update

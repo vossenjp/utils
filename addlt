@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+# addlt.pl -- Add line termination to "one line" HTML files
+$ver = "v1.0"; # 2002-09-19 JP Vossen <jp@jpsdomain.org>
+
+##########################################################################
+(($myname = $0) =~ s/^.*(\/|\\)//ig); # remove up to last "\" or "/"
+$Greeting =  ("$myname $ver Copyright 2002 (JP Vossen)\n");
+
+if (("@ARGV" =~ /\?/) || ("@ARGV" =~ /-h/) || (@ARGV < 0)) { #if wrong # of args, or a ? in args - die
+    print STDERR ("\n$Greeting\n\tUsage: $myname -i {infile} -o {outfile}\n");
+    print STDERR ("\n\t-i {infile}  = Use infile as the input file, otherwise use STDIN.\n");
+    print STDERR ("\t-o {outfile} = Use outfile as the output file, otherwise use STDOUT.\n");
+    print STDERR ("\t-a           = Be aggressive about it.\n");
+    print STDERR ("\t-q           = Be quiet about it.\n\n");
+    print STDERR ("\tDefault:     Add \\n only after </tag>\n");
+    print STDERR ("\tAggressive:  Add \\n after <tag> and </tag>\n");
+    die ("\n");
+}
+
+use Getopt::Std;                   # Use Perl5 built-in program argument handler
+getopts('ai:o:q');                 # Define possible args.
+
+if (! $opt_i) { $opt_i = "-"; }    # If no input file specified, use STDIN
+if (! $opt_o) { $opt_o = "-"; }    # If no output file specified, use STDOUT
+
+open (INFILE, "$opt_i")   || die ("$myname: error opening $opt_i $!\n");
+open (OUTFILE, ">$opt_o") || die ("$myname: error opening $opt_o $!\n");
+
+if (! $opt_q) {
+    print STDERR ("\n$Greeting\n");
+    if ($opt_a) { print STDERR ("\tAdding line termination aggressivly.\n"); }
+}
+
+while ($aline = <INFILE>) {
+    chomp($aline);
+    if ($opt_a) {                      # Use line termination aggressivly
+        # Add \n after <tag> and </tag>
+        $aline =~ s/((<.+?>)|(<\/.+?>))/$1\n/g;
+    } else {                           # Be less aggressive
+        # Add \n only after </tag>
+        $aline =~ s/(<\/\w+>)/$1\n/g;
+    }
+    print OUTFILE ("$aline\n");
+} # end of while
+close (INFILE);
+close (OUTFILE);
+
+if (! $opt_q) { print STDERR ("\n$myname finished in ",time()-$^T," seconds.\n"); }
+

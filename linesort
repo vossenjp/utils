@@ -1,0 +1,27 @@
+#!/bin/bash -
+# linesort--Trivial in-line sort
+
+if [ "$1" = '-h' -o "$1" = '--help' ]; then
+    cat <<-EoN
+
+	Trivial in-line sorter (on Linux, using xsel)
+	    usage: $0 (<delimiter_in>) (<delimiter_out>)
+
+	e.g.
+	    usage: $0             # Default
+	    usage: $0 ',' ','"    # Same as default
+	    usage: $0 '\s' ' '    # Spaces, note: ' ' won't work
+	EoN
+    exit 0
+fi
+
+# test data: eefive aaone ddfour ccthree ffsix bbtwo
+# test data: eefive, aaone, ddfour, ccthree, ffsix, bbtwo
+# test data: eefive; aaone; ddfour; ccthree; ffsix; bbtwo
+
+delimiter_in="${1:-,}"               # Default is ','
+delimiter_out="${2:-$delimiter_in}"  # Default is same as $delimiter_in
+
+xsel -b \
+  | perl -a -F"$delimiter_in" -ne "print join('$delimiter_out', sort @F);" \
+  | xsel -bi
