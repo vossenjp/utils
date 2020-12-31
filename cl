@@ -91,6 +91,12 @@ case "$1" in
     ### bul       = Add a bullet (*) after indent but before text
     bul     ) $GETCLIP | perl -pe 's/^(\s*)(\w+)/$1* $2/;' | $PUTCLIP ;;
 
+    ### num       = Number lines (not already numbered)
+    num     ) $GETCLIP | perl -pe 's/^/++$i . q(. )/eg;' | $PUTCLIP ;;
+
+    ### renum     = Re-number (already numbered) lines matching /^\d+[.:]? /
+    renum   ) $GETCLIP | perl -pe 's/^\d+[.:]? /++$i . q(. )/eg;' | $PUTCLIP ;;
+
     ### t2s       = Tab2Spaces, default is 1 tab to 4 spaces
     t2s     )
         spaces="${2:-4}"               # Default is '4'
