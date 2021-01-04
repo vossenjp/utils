@@ -19,9 +19,9 @@ if ( $opt_h ) {
     exit 0;
 }
 
-my $URL_REDMINE = qr'https://va-securitycloudsiem.nat.bt.com/redmine|http://sv-project01.counterpane.com/redmine';
-my $URL_MOES    = qr'http://moes.sv.counterpane.com/wiki';
-#my $URL_SVN = 'http://sv-svn.sv.counterpane.com/viewvc'; # not used (yet)?
+my $URL_REDMINE = qr'REDACTED';
+my $URL_MOES    = qr'REDACTED';
+#my $URL_SVN = 'REDACTED'; # not used (yet)?
 
 # FIXME: need an option for Redmine vs Mediawiki markup
 #my $bullet = '*';

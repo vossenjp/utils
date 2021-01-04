@@ -17,7 +17,7 @@ if ("@ARGV" =~ /^\?|^-h$|^--help$/) {
   -o {outfile}  = Use outfile as the output file, otherwise use STDOUT.
   -r = Raw output.  Default is reverse sort by frequency.
   -Q {num} = Print a dot to STDERR after processing every {num} lines,
-        use -Q 0 to turn off, the default is -Q 1000.
+	use -Q 0 to turn off, the default is -Q 1000.
   -q = Be quiet about it.
   -e {regex} = User defined regex as: s!{regex}!*!g
        -E {display} = User defined regex as: s!{regex}!{display}!g
@@ -344,3 +344,4 @@ sub IncludeFileSplat {
 EoC
 close (CONFFILE);
 } #end of sub CreateExpressionFileTemplate
+
