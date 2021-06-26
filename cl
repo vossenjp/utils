@@ -1,7 +1,7 @@
 #!/bin/bash -
 # cl--Clean Up script
 
-if [ "$1" = '-h' -o "$1" = '--help' ]; then
+if [ "$1" = '-h' -o "$1" = '--help' -o "$1" = 'help' ]; then
     cat <<-EoN
 
 	Trivial Clean Up script
@@ -12,7 +12,7 @@ if [ "$1" = '-h' -o "$1" = '--help' ]; then
 
 	Options:
 	EoN
-    grep '^    ###' $0 | cut -c9- | grep "${2:-.}"
+    grep '^    ###' $0 | cut -c9- | grep -i "${2:-.}"
     echo ''
     exit 0
 fi
