@@ -1,6 +1,6 @@
 #!/bin/bash -
 # replace_mirrored_disk--Replace a failed disk in a Linux software mirror
-# $Id: replace_mirrored_disk 2082 2018-12-15 22:07:01Z root $
+# $Id: replace_mirrored_disk 2157 2021-06-26 19:16:54Z root $
 
 # See also:
     # angstrom:/root/grow-boot.angstrom
@@ -135,7 +135,7 @@ function _part2 {
     echo 'Make sure things look good and are being synchronized.' >&2
     echo "cat /proc/mdstat"
     cat /proc/mdstat
-    # watch -d cat /proc/mdstat
+    # watch -n5 cat /proc/mdstat
 
     # WAIT???
     # echo '' >&2
@@ -154,6 +154,14 @@ function _part2 {
 
 # Usage "hidden" here in an attempt to make the user read the script
 # Usage: $0 part1 --or-- $0 part2
+
+echo '' >&2
+echo "GOOD_DISK = $GOOD_DISK" >&2
+echo "BAD_DISK  = $BAD_DISK"  >&2
+echo -n "RAID      = " >&2 ; printf "%-12q" ${RAID[@]} >&2 ; echo '' >&2
+echo -n "DISK      = " >&2 ; printf "%-12q" ${DISK[@]} >&2 ; echo '' >&2
+echo '' >&2
+read -n1 -p 'Sanity check!'
 
 case "$1" in
     part1 ) _part1 ;;
