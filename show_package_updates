@@ -1,9 +1,9 @@
 #!/bin/bash -
 # show_package_updates--Trivially check for new packages
-# $Id: show_package_updates 2139 2020-09-26 19:44:24Z root $
+# $Id: show_package_updates 2163 2021-06-26 19:21:07Z root $
 # $URL: file:///home/SVN/usr_local_bin/show_package_updates $
 
-echo "$(hostname):" 'running $Id: show_package_updates 2139 2020-09-26 19:44:24Z root $'
+echo "$(hostname):" 'running $Id: show_package_updates 2163 2021-06-26 19:21:07Z root $'
 
 # Called from cron with --wait for random wait (except on drake) so not
 # everything is updating at once
@@ -13,6 +13,8 @@ fi
 
 # Display IPAs; useful for remote and/or DHCP machines
 /sbin/ifconfig | grep -o 'inet .*' | grep -v 'inet.*127.0.'
+# Get distro & kernel details
+[ -r /etc/os-release ] && grep '^PRETTY_NAME' /etc/os-release
 perl -ne 'print qq(\u$1: \u$2\n) if m!^deb http://.*?/(\w+)/?\s+(\w+)\s+main!;' /etc/apt/sources.list
 uname -a
 echo ''
