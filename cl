@@ -88,13 +88,17 @@ case "$1" in
     ### in        = Indent one outline level (repeat 1st [#*\t] char)
     in      ) $GETCLIP | perl -pe 's/^([#*\t])/$1$1/;' | $PUTCLIP ;;
 
-    ### bul       = Add a bullet (*) after indent but before text
-    bul     ) $GETCLIP | perl -pe 's/^(\s*)(\w+)/$1* $2/;' | $PUTCLIP ;;
+    ### bul       = Add a bullet (*) after indent but before text (see also 'p')
+    # Replace Unicode bullet (e2 80 a2) with * for wikis
+    bul     ) $GETCLIP | perl -pe 's/\xe2\x80\xa2/*/g; s/^(\s*)(\w+)/$1* $2/;' | $PUTCLIP ;;
 
-    ### num       = Number lines (not already numbered)
-    num     ) $GETCLIP | perl -pe 's/^/++$i . q(. )/eg;' | $PUTCLIP ;;
+    ### num       = Add a wiki number (#) after indent but before text; replaces static /\d*[.:)\s]*/
+    num     ) $GETCLIP | perl -pe 's/^(\s*)\d*[.:)\s]*(\w+)/$1# $2/;' | $PUTCLIP ;;
 
-    ### renum     = Re-number (already numbered) lines matching /^\d+[.:]? /
+    ### snum      = Statically number lines (not already numbered)
+    snum    ) $GETCLIP | perl -pe 's/^/++$i . q(. )/eg;' | $PUTCLIP ;;
+
+    ### renum     = Statically re-number already numbered lines matching /^\d+[.:]? /
     renum   ) $GETCLIP | perl -pe 's/^\d+[.:]? /++$i . q(. )/eg;' | $PUTCLIP ;;
 
     ### comment   = Prefix line with "# "
