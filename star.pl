@@ -2,13 +2,13 @@
 # Star.pl -- Replace various strings with star "*" to allow use of 'uniq' and other tools
 
 # $Id: star.pl 802 2005-04-01 06:09:42Z jp $
-# $URL: file:///i:/home/SVN/WORK/util/star.pl $
+# $URL: file:///i:/home/SVN/CIS/util/star.pl $
 
 $ver = '$Version: 1.17 $';
 # parts of the time and date regex from Mastering Regular Expressions, 2nd Edition
 ##########################################################################
 (($myname = $0) =~ s/^.*(\/|\\)//ig); # remove up to last "\" or "/"
-$Greeting =  ("$myname $ver Copyright 2003-2004 (JP Vossen)\n");
+$Greeting =  ("$myname $ver Copyright 2003-2004 CIS (JP Vossen)\n");
 
 if ("@ARGV" =~ /^\?|^-h$|^--help$/) {
     print STDERR ("\n$Greeting\n\tUsage: $myname [OPTIONS] (-i [FILE]) (-o [FILE]}) (-q)\n\n");
@@ -344,3 +344,4 @@ sub IncludeFileSplat {
 EoC
 close (CONFFILE);
 } #end of sub CreateExpressionFileTemplate
+
