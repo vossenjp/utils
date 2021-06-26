@@ -57,10 +57,10 @@ case "$1" in
     ### t         = Transform using ARG, e.g., 's/ +/\t/g'
     t       ) $GETCLIP | perl -pe "$2" | $PUTCLIP ;;
 
-    ### T         = Transform using 's/  +/\t/g'
+    ### T         = Transform using 's/  +/\t/g' (see also 's2t')
     T       ) $GETCLIP | perl -pe 's/  +/\t/g;' | $PUTCLIP ;;
 
-    ### p         = Prefix all lines with '* ' or argument
+    ### p         = Prefix all lines with '* ' or argument (see also 'bul')
     p       )
         prefix="${2:-* }"               # Default is '* '
         $GETCLIP | perl -ne "print qq($prefix\$_);" | $PUTCLIP
@@ -112,7 +112,7 @@ case "$1" in
         spaces="${2:-4}"               # Default is '4'
         $GETCLIP | perl -pe "s/\t/' ' x $spaces/ge;" | $PUTCLIP
     ;;
-    ### s2t       = Space(s)2Tab, default is 4 spaces to 1 tab
+    ### s2t       = Space(s)2Tab, default is 4 spaces to 1 tab (see also 'T')
     s2t     )
         spaces="${2:-4}"               # Default is '4'
         $GETCLIP | perl -pe "s/ {$spaces}/\t/g;" | $PUTCLIP
