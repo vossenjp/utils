@@ -1,6 +1,6 @@
 #!/bin/bash -
 # Save/Restore FF sessions
-# $Id: ff-sess.sh 2112 2020-04-05 20:04:58Z root $
+# $Id: ff-sess.sh 2158 2021-06-26 19:17:48Z root $
 
 # # Twice daily FF session backup
 # 45 03,15 * * * opt/bin/ff-sess.sh qsave
@@ -34,10 +34,21 @@
 date=$(date '+%a_%H')
 
 case "$1" in
-    qsave    )  # Quiet save
+    qsave    )  # Quiet save, unless there are errors
         cd $HOME/.mozilla/firefox
         rm -f ff_sessions_$date.zip
         zip -9qr ff_sessions_$date.zip */session*
+
+        # Sanity check that the latest restore files really exist!
+        # I have no idea what to do if they don't though...  And yes, we
+        # already created the tarball, better to have some of it anyway...
+        for dir in $(ls -1d */session* | cut -d '/' -f1 | sort -u); do
+            [ -d "$dir" ] || continue  # Just in case
+            [ -d "$dir/sessionstore-backups/" ] \
+              || echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/' missing!"
+            [ -f "$dir/sessionstore-backups/recovery.jsonlz4" ] \
+              || echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/recovery.jsonlz4' missing!"
+        done
     ;;
 
     save    )  # Noisy save (calls qsave)
