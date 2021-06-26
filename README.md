@@ -44,6 +44,7 @@ The **`cl`** "clean Up script" is probably the most handy tool I have.  It's a f
 * `ff-sess.sh` Save/Restore FF sessions, with trivial restore GUI (CLI, using `dialog`)
 * `find-group.pl` Find a group containing the most users from a `users.txt` list; useful when considering creating a new groups, to see if you might already have a group containing most of the users
 * `findlarge` Trivial reminder/skeleton for finding "large" files in various locations
+* `findz` Find Zombie processes and parent PID
 * `fixbadsig` Fix BADSIG and other crap in APT repos data (Obsolete?)
 * `foreground` Bring a named window to the foreground in a GUI, else run it (map it to a keystroke in a GUI)
 * `linesort` Trivial in-line sort (sort delimited items within a single line, see also `cl`)

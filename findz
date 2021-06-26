@@ -1,0 +1,18 @@
+#!/bin/bash -
+# findz--Find Zombie processes and parent PID
+# JP, 2021-01-23 Sat, 2021-03-28 Sun
+# $Id: findz 2166 2021-06-26 19:23:57Z root $
+
+# Find and show Zombies
+zombies=$(ps -xal | egrep '^F\b|\bZ\b')
+echo 'Zombie processes:'
+echo "$zombies"
+echo ''
+
+# Find and show PPIDs
+echo 'Zombie process Parent PID (PPID) to kill:'
+ppids=$(echo "$zombies" | awk '! /PPID/ {print $4}' | sort -u)
+for ppid in $ppids; do
+    ps uwx -q $ppid
+    echo ''
+done
