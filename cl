@@ -161,11 +161,26 @@ case "$1" in
           | $PUTCLIP
     ;;
 
-    ### c         = Wrap in Redmine {{Collapse...}} macro
-    c       ) echo -e "{{Collapse(...)\n<pre>\n$($GETCLIP)\n</pre>\n}}" | $PUTCLIP ;;
+    ### pre       = Wrap in Redmine: <pre></pre>
+    pre     ) echo -e "<pre>\n$($GETCLIP)\n</pre>" | $PUTCLIP ;;
 
-    ### code      = Wrap in Jira {code:bash}..{code} macros
-    code    ) echo -e "{code:bash}\n$($GETCLIP)\n{code}\n" | $PUTCLIP ;;
+    ### c         = Wrap in Redmine: <pre><code class="<TYPE>">...</code></pre>
+    c       )
+        type="${2:-bash}"               # Default is 'bash'
+        echo -e "<pre><code class=\"$type\">\n$($GETCLIP)\n</code></pre>" | $PUTCLIP
+    ;;
+
+    ### col       = Wrap in Redmine {{Collapse...}} macro
+    col     )
+        $0 c $2
+        echo -e "{{Collapse(...)\n$($GETCLIP)\n}}" | $PUTCLIP
+    ;;
+
+    ### code|jc   = Wrap in Jira {code:<TYPE>}..{code} macros
+    code|jc )
+        type="${2:-bash}"               # Default is 'bash'
+        echo -e "{code:$type}\n$($GETCLIP)\n{code}\n" | $PUTCLIP
+    ;;
 
     ### table     = Turn a TAB delimited table into a Redmine wiki table
     table   ) $GETCLIP > /tmp/table
@@ -182,24 +197,25 @@ case "$1" in
           | $PUTCLIP
     ;;
 
-    ### r2j       = Convert Redmine @/<pre> tags to Jira {{/{code}
+    ### r2j       = Convert Redmine @/<pre><code... tags to Jira {{/{code}
     r2j      ) $GETCLIP | perl -p \
                  -e 's/^> /bq. /g;' \
                  -e 's/\B@(\S)/{{$1/g;' \
                  -e 's/(\S)@\B/$1}}/g;' \
+                 -e 's/<pre><code class="(\w+)">/{code:$1}/g;' \
                  -e 's/<pre>/{code:bash}/g;' \
-                 -e 's!</pre>!{code}!g;' \
+                 -e 's!(</code>)?</pre>!{code}!g;' \
                  -e 's/"([^"]+)":(http\S+)/[$1|$2]/g;' \
                  | $PUTCLIP
     ;;
 
-    ### j2r       = Convert Jira {{/{code} tags to Redmine @/<pre>
+    ### j2r       = Convert Jira {{/{code} tags to Redmine @/<pre><code...
     j2r      ) $GETCLIP | perl -p \
                  -e 's/^bq\. /> /g;' \
                  -e 's/\B\{\{(\S)/\@$1/g;' \
                  -e 's/(\S)\}\}\B/$1@/g;' \
-                 -e 's/\{code:bash\}/<pre>/g;' \
-                 -e 's!\{code\}!</pre>!g;' \
+                 -e 's/\{code:(\w+)\}/<pre><code class="$1">/g;' \
+                 -e 's!\{code\}!</code></pre>!g;' \
                  -e 's/\[(.*?)\|(.*?)\]/"$1":$2/g;' \
                  | $PUTCLIP
     ;;
