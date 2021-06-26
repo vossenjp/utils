@@ -1,8 +1,8 @@
 #!/bin/bash -
 # tattle--Log the way this program was called
 
-# $Id: tattle 918 2005-07-01 04:14:23Z root $
-# $URL: file:///home/svn/usr_local_bin/tattle $
+# $Id: tattle 2152 2021-06-26 19:13:02Z root $
+# $URL: file:///home/SVN/usr_local_bin/tattle $
 
 # Useful for tracing remote commands such as rsync over SSH.
 # e.g. use '--rsync-path=/usr/bin/tattle' on the remote side to see

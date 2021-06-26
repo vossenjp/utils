@@ -1,8 +1,8 @@
 #!/bin/bash -
 # addheader--Add a header at the top of an existing file
 
-# $Id: addheader 899 2005-05-29 06:48:41Z root $
-# $URL: file:///home/svn/usr_local_bin/addheader $
+# $Id: addheader 2152 2021-06-26 19:13:02Z root $
+# $URL: file:///home/SVN/usr_local_bin/addheader $
 
 VERSION='$Version: 1.1 $'
 COPYRIGHT='Copyright 2005 JP Vossen (http://www.jpsdomain.org/)'
