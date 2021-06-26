@@ -97,6 +97,12 @@ case "$1" in
     ### renum     = Re-number (already numbered) lines matching /^\d+[.:]? /
     renum   ) $GETCLIP | perl -pe 's/^\d+[.:]? /++$i . q(. )/eg;' | $PUTCLIP ;;
 
+    ### comment   = Prefix line with "# "
+    comment ) $GETCLIP | perl -pe 's/^/# /;' | $PUTCLIP ;;
+
+    ### uncomment = Removing leading /^# */
+    uncomment ) $GETCLIP | perl -pe 's/^# *//;' | $PUTCLIP ;;
+
     ### t2s       = Tab2Spaces, default is 1 tab to 4 spaces
     t2s     )
         spaces="${2:-4}"               # Default is '4'
