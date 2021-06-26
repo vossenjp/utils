@@ -232,10 +232,25 @@ case "$1" in
     # Otherwise   = @@
     # Add leading "# "
 
-    ### furl      = Remove MORE URL trash (e.g, Full, 's/[?&].*$//')
+    ### url       = Remove trash (e.g, "safelink", "\?.*$") & un-escape %nn from a URL
+    url     ) $GETCLIP | perl -pe 's/\%(\w\w)/chr hex $1/ge;' \
+                -e 's!https?://.*?\.safelinks\.protection\.outlook\.com/\?url=!!;' \
+                -e 's/&amp;/&/g;' \
+                -e 's/&data=\d+\|01\|.+?\@bt\.com.*$//;' \
+                | $PUTCLIP
+    ;;
+              # See https://unix.stackexchange.com/a/159309 for URL unescape
+              # This is more readable but needs a module:
+              # perl -MURI::Escape -e 'print uri_unescape($ARGV[0])' "$encoded_url")
+              # This doesn't work:
+              # perl -MHTML::Entities -pe 'decode_entities($_)'
+              # In Bash you can replace % with \x the decode HEX, but it's tricky
+              # https://stackoverflow.com/a/42636717, https://github.com/sixarm/urldecode.sh
+
+    ### furl      = Remove MORE URL trash (e.g, Full, 's/[?&]\S+(\s*)//')
     furl|urlf )
         $0 url
-        $GETCLIP | perl -pe 's/[?&].*$//;' | $PUTCLIP
+        $GETCLIP | perl -pe 's!(https?://.*?)[?&]\S+(\s*)!$1$2!g;' | $PUTCLIP
     ;;
 
     ### az        = Remove Amazon 'ref.*$' trash/tracking
