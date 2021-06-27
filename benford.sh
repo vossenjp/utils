@@ -5,7 +5,7 @@
 #    pg 198, 7.17 An Easy Histogram with bash
 # Adapted: JP, 2021-06-27
 # $URL: file:///home/SVN/usr_local_bin/benford.sh $
-ID='$Id: benford.sh 2169 2021-06-27 19:19:02Z root $'
+ID='$Id: benford.sh 2170 2021-06-27 19:29:44Z root $'
 #_________________________________________________________________________
 PROGRAM=${0##*/}  # bash version of `basename`
 
@@ -64,7 +64,7 @@ for digit in {1..9}; do
         # Figure out the PERCENT of digit occurrence (INTEGER ONLY)!
         digit_percent=$(( 100 * ${input[$digit]} / $total_records))
     fi
-    printf "   [%2d]:" ${input[$digit]}             #    [%n]:
+    printf "   [%2d]:" $digit_percent               #    [%n]:
     for ((i=0; i<digit_percent; i++)) {             # Draw the bar
         printf "*"
     }
