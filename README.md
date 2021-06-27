@@ -91,7 +91,7 @@ These are the settings or configs that I use everywhere, every day.
 
 ### Special & Dangerous
 
-*Do not run any of this code without reading and understand it!*  These can trash your hard drives and destroy all your data!  They worked for me, for how *I* set things up and how *I* do things.  Do not runs these without understanding exactly what they do and modifying them to fix your environment!  You have been warned.
+*Do not run any of this code without reading and understand it!*  These can trash your hard drives and destroy all your data!  They worked for me, for how *I* set things up and how *I* do things.  Do not run these without understanding exactly what they do and modifying them to fit your environment!  You have been warned.
 
 * `grow_mirrored_disk` Grow a Linux software mirror after swapping in larger hard drives
 * `replace_mirrored_disk` Replace a failed disk in a Linux software mirror
