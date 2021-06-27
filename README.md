@@ -33,6 +33,7 @@ The **`cl`** "clean Up script" is probably the most handy tool I have.  It's a f
 * `DNSlookup.pl` Lookup IPAs and get hostnames
 * `addheader` Add a header at the top of an existing file (very old, arguably crufty and overkill)
 * `addlt` Add line termination to "one line" HTML files
+* `benford.sh` Write a Benford's Law histogram from input (in pure bash)
 * `caps2esc` Map "caps lock" to "Esc" and back (From http://www.linuxquestions.org/questions/linux-general-1/vim-map-caps-lock-to-escape-409726)
 * `changelog` Trivial system CHANGELOG wrapper to maintain a `/root/CHANGELOG.txt` (crufty style)
 * `chperm` Set owner.group and mode/permissions on a given file in 1 step
