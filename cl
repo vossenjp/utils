@@ -1,16 +1,19 @@
 #!/bin/bash -
 # cl--Clean Up script
+# $Id: cl 2178 2021-07-08 05:20:05Z root $
+# Requires many other tools: xsel, Perl, Python, pandoc, column, zim2wiki.pl,
+# awk, cat, cut, date, egrep, grep, head, rm, scp, sed, sort, tail, tee
 
-if [ "$1" = '-h' -o "$1" = '--help' -o "$1" = 'help' ]; then
+if [ "$1" == '-h' -o "$1" == 'h' -o "$1" == '--help' -o "$1" == 'help' ]; then
     cat <<-EoN
 
 	Trivial Clean Up script
-	    usage: $0 ({option})
+	    usage: $0 (<action>) (<option or argument>)
 	e.g.
-	    usage: $0 -h <term>
-	    usage: $0 x
+	    $0 -h <term>
+	    $0 <action> (<opt/arg>)
 
-	Options:
+	Actions:
 	EoN
     grep '^    ###' $0 | cut -c9- | grep -i "${2:-.}"
     echo ''
