@@ -142,6 +142,39 @@ case "$1" in
         $GETCLIP | perl -pe "s/ {$spaces}/\t/g;" | $PUTCLIP
     ;;
 
+    ### c2t       = CSV2tab
+    c2t|csv2tab )  # Python one-liner!  (Also in bashrc for aliases)
+        $GETCLIP \
+          | python -c "import csv, sys; csv.writer(sys.stdout, delimiter='\t', lineterminator='\n').writerows(csv.reader(sys.stdin))" \
+          | $PUTCLIP
+    ;;
+    ### t2c       = tab2CSV
+    t2c|tab2csv )  # Python one-liner!  (Also in bashrc for aliases)
+        $GETCLIP \
+          | python -c "import csv, sys; csv.writer(sys.stdout, lineterminator='\n').writerows(csv.reader(sys.stdin, delimiter='\t'))" \
+          | $PUTCLIP
+    ;;
+
+    ### c2j       = CSV2JSON (optionally "pretty")
+    c2j|csv2json )  # Python one-liner!  (Also in bashrc for aliases)
+        if [ "$2" == 'pretty' ]; then pretty=', indent=2'; else pretty=''; fi
+        $GETCLIP \
+          | python -c "import csv, json, sys; print(json.dumps(list(csv.reader(sys.stdin))$pretty))" \
+          | $PUTCLIP
+    ;;
+    ### t2j       = tab2JSON (optionally "pretty")
+    t2j|tab2json )  # Python one-liner!  (Also in bashrc for aliases)
+        if [ "$2" == 'pretty' ]; then pretty=', indent=2'; else pretty=''; fi
+        $GETCLIP \
+          | python -c "import csv, json, sys; print(json.dumps(list(csv.reader(sys.stdin, delimiter='\t'))$pretty))" \
+          | $PUTCLIP
+    ;;
+
+    ### dos2unix  = dos2unix (CRLF to LF) using Perl
+    dos2unix ) $GETCLIP | perl -pe 's/\r$//'    | $PUTCLIP ;;
+    ### unix2dos  = unix2dos (LF to CRLF) using Perl
+    unix2dos ) $GETCLIP | perl -pe 's/\n/\r\n/' | $PUTCLIP ;;
+
     ### r|sort    = Sort
     r|sort  ) $GETCLIP | sort | $PUTCLIP ;;
 
