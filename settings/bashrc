@@ -212,6 +212,17 @@ alias wgetsdir="wget --no-verbose --recursive --timestamping --no-parent \
  --no-host-directories --reject 'index.*'"  # Grab a dir and sub-dirs
 alias zonex='host -l'        # Extract (dump) DNS zone
 
+# Python one-liners!  (Also in `cl`)
+# Adapted from https://unix.stackexchange.com/a/359838
+alias csv2tab="python -c \"import csv, sys; csv.writer(sys.stdout, delimiter='\t', lineterminator='\n').writerows(csv.reader(sys.stdin))\""
+alias tab2csv="python -c \"import csv, sys; csv.writer(sys.stdout, lineterminator='\n').writerows(csv.reader(sys.stdin, delimiter='\t'))\""
+# Tweaked from https://wiki.python.org/moin/Powerful%20Python%20One-Liners
+alias csv2json="python -c \"import csv, json, sys; print(json.dumps(list(csv.reader(sys.stdin))))\""
+alias tab2json="python -c \"import csv, json, sys; print(json.dumps(list(csv.reader(sys.stdin, delimiter='\t'))))\""
+# "Pretty"
+alias csv2jsonp="python -c \"import csv, json, sys; print(json.dumps(list(csv.reader(sys.stdin)), indent=2))\""
+alias tab2jsonp="python -c \"import csv, json, sys; print(json.dumps(list(csv.reader(sys.stdin, delimiter='\t')), indent=2))\""
+
 # Date/time
 alias iso8601="date '+%Y-%m-%dT%H:%M:%S%z'"  # ISO-8601 Time
 alias now="date       '+%F %T %Z(%z)'"       # More readable ISO-8601 local
