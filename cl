@@ -8,10 +8,18 @@ if [ "$1" == '-h' -o "$1" == 'h' -o "$1" == '--help' -o "$1" == 'help' ]; then
     cat <<-EoN
 
 	Trivial Clean Up script
-	    usage: $0 (<action>) (<option or argument>)
+	    usage: $0 (pipe*) (<action>) (<option or argument>)
 	e.g.
-	    $0 -h <term>
-	    $0 <action> (<opt/arg>)
+	    $0 -h <term>                 # Display actions
+	    $0 <action> (<opt/arg>)      # Read/write the clipboard
+	    $0 pipe <action> (<o/a>)     # Read STDIN, write STDOUT
+	    $0 pipein <action> (<o/a>)   # Read STDIN, write the clipboard
+	    $0 pipeout <action> (<o/a>)  # Read the clipboard, write STDOUT
+
+	The usual use-case is reading from then writing to the clipboard, but
+	sometimes you want to process files in a pipeline, so in that case use
+	'pipe*' to read from STDIN then write to STDOUT or some combination.
+	There are a few recursive calls that won't work with 'pipe*'.
 
 	Actions:
 	EoN
@@ -20,7 +28,7 @@ if [ "$1" == '-h' -o "$1" == 'h' -o "$1" == '--help' -o "$1" == 'help' ]; then
     exit 0
 fi
 
-# Figure out the tool needed...
+# Figure out the input/output tool needed to read/write the clipboard...
 if   [ -x /usr/bin/xsel ]; then
     GETCLIP='/usr/bin/xsel -b'
     PUTCLIP='/usr/bin/xsel -bi'
@@ -29,6 +37,19 @@ elif [ -x /usr/bin/pbpaste ]; then
     PUTCLIP='/usr/bin/pbcopy'
 else
     echo "Can't find 'xsel' (Linux) or 'pbpaste/pbcopy' (Mac), please install one or the other."
+fi
+
+# Then maybe change input/output
+if   [ "$1" == 'pipe' ]; then       # Read STDIN, write STDOUT
+    GETCLIP='cat'
+    PUTCLIP='cat'
+    shift
+elif [ "$1" == 'pipein' ]; then     # Read STDIN, write the clipboard
+    GETCLIP='cat'
+    shift
+elif [ "$1" == 'pipeout' ]; then    # Read the clipboard, write STDOUT
+    PUTCLIP='cat'
+    shift
 fi
 
     #   cmd )     = desc    <<< template
@@ -173,9 +194,9 @@ case "$1" in
         echo -e "<pre><code class=\"$type\">\n$($GETCLIP)\n</code></pre>" | $PUTCLIP
     ;;
 
-    ### col       = Wrap in Redmine {{Collapse...}} macro
+    ### col       = Wrap in Redmine {{Collapse...}} macro (no 'pipe*)
     col     )
-        $0 c $2
+        $0 c $2  # Recursive call won't work with pipe*
         echo -e "{{Collapse(...)\n$($GETCLIP)\n}}" | $PUTCLIP
     ;;
 
@@ -194,8 +215,8 @@ case "$1" in
     ;;
 
     ### jtable    = Turn a TAB delimited table into a Jira wiki table
-    jtable  )  # Same as a Redmine table except change header "|_." to "||"
-        $0 table
+    jtable  )  # Same as a Redmine table except change header "|_." to "||" (no 'pipe*)
+        $0 table  # Recursive call won't work with pipe*
         $GETCLIP | perl -pe 's/\|_\./ ||/g;' -e 's/^ \|\| /|| /;' \
           | $PUTCLIP
     ;;
@@ -276,9 +297,9 @@ case "$1" in
               # In Bash you can replace % with \x the decode HEX, but it's tricky
               # https://stackoverflow.com/a/42636717, https://github.com/sixarm/urldecode.sh
 
-    ### furl      = Remove MORE URL trash (e.g, Full, 's/[?&]\S+(\s*)//')
+    ### furl      = Remove MORE URL trash (e.g, Full, 's/[?&]\S+(\s*)//') (no 'pipe*)
     furl|urlf )
-        $0 url
+        $0 url  # Recursive call won't work with pipe*
         $GETCLIP | perl -pe 's!(https?://.*?)[?&]\S+(\s*)!$1$2!g;' | $PUTCLIP
     ;;
 
