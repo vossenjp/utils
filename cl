@@ -1,6 +1,6 @@
 #!/bin/bash -
 # cl--Clean Up script
-# $Id: cl 2178 2021-07-08 05:20:05Z root $
+# $Id: cl 2209 2023-09-17 18:44:53Z root $
 # Requires many other tools: xsel, Perl, Python, pandoc, column, zim2wiki.pl,
 # awk, cat, cut, date, egrep, grep, head, rm, scp, sed, sort, tail, tee
 
@@ -23,7 +23,7 @@ if [ "$1" == '-h' -o "$1" == 'h' -o "$1" == '--help' -o "$1" == 'help' ]; then
 
 	Actions:
 	EoN
-    grep '^    ###' $0 | cut -c9- | grep -i "${2:-.}"
+    grep -h '^    ###' $HELP_FILES | cut -c9- | grep -i "${2:-.}"
     echo ''
     exit 0
 fi
@@ -114,10 +114,10 @@ case "$1" in
 
     ### bul       = Add a bullet (*) after indent but before text (see also 'p')
     # Replace Unicode bullet (e2 80 a2) with * for wikis
-    bul     ) $GETCLIP | perl -pe 's/\xe2\x80\xa2/*/g; s/^(\s*)(\w+)/$1* $2/;' | $PUTCLIP ;;
+    bul     ) $GETCLIP | perl -pe 's/\xe2\x80\xa2/*/g; s/^(\s*)([[\w]+)/$1* $2/;' | $PUTCLIP ;;
 
     ### num       = Add a wiki number (#) after indent but before text; replaces static /\d*[.:)\s]*/
-    num     ) $GETCLIP | perl -pe 's/^(\s*)\d*[.:)\s]*(\w+)/$1# $2/;' | $PUTCLIP ;;
+    num     ) $GETCLIP | perl -pe 's/^(\s*)\d*[.:)\s]*(.?\w+)/$1# $2/;' | $PUTCLIP ;;
 
     ### snum      = Statically number lines (not already numbered)
     snum    ) $GETCLIP | perl -pe 's/^/++$i . q(. )/eg;' | $PUTCLIP ;;
@@ -181,6 +181,19 @@ case "$1" in
     ### u|sortu   = Sort | Uniq
     u|sortu ) $GETCLIP | sort | uniq | $PUTCLIP ;;
 
+    ### sortn     = Sort by (leading) numbers
+    sortn   ) $GETCLIP | sort -n | $PUTCLIP ;;
+
+    ### sortnu    = Sort by (leading) numbers | Uniq
+    sortnu  ) $GETCLIP | sort -n | uniq | $PUTCLIP ;;
+
+    ### sortip    = Sort by (leading) IPA
+    # -V is a lot easier than: sort -t . -k 1,1n -k 2,2n -k 3,3n -k 4,4n
+    sortip* ) $GETCLIP | sort -V | $PUTCLIP ;;
+
+    ### sortipu   = Sort by (leading) IPA | Uniq
+    sortipu ) $GETCLIP | sort -V | uniq | $PUTCLIP ;;
+
     ### linesort  = Sort in-line (<delim-in> (<delim-out>))
     # cl linesort ',' ','     # Same as default
     # cl linesort '\s' ' '    # Spaces, note: ' ' won't work
@@ -241,9 +254,20 @@ case "$1" in
 
     ### table     = Turn a TAB delimited table into a Redmine wiki table
     table   ) $GETCLIP > /tmp/table
-              head -n1  /tmp/table | perl -pe 's/\t/ |_. /g; s/^/|_. /; s/$/ |/;' > /tmp/table2
-              tail -n+2 /tmp/table | perl -pe 's/\t/ | /g; s/^/| /; s/$/ |/;'    >> /tmp/table2
-              sed 's/|/\&|/g' /tmp/table2 | column -t -s'\&' | $PUTCLIP
+              head -n1  /tmp/table | perl -pe 's/\t/ |_. /g; s/^/|_. /; s/$/ |/;'  > /tmp/table2
+              tail -n+2 /tmp/table | perl -pe 's/\t/ | /g;   s/^/| /;   s/$/ |/;' >> /tmp/table2
+              sed 's/|/\&|/g' /tmp/table2 | column -t -s'\&' \
+                | perl -pe 's/  \|/|/g;' | $PUTCLIP
+              rm -f /tmp/table /tmp/table2
+    ;;
+
+    ### mtable    = Turn a TAB delimited table into a Markdown table
+    mtable  ) $GETCLIP > /tmp/table
+              head -n1  /tmp/table  | perl -pe 's/\t/ | /g; s/^/| /; s/$/ |/;'      > /tmp/table2
+              head -n1  /tmp/table2 | perl -pe 's/[^|]/-/g; s/-$/\n/;'             >> /tmp/table2
+              tail -n+2 /tmp/table  | perl -pe 's/\t/ | /g;   s/^/| /;   s/$/ |/;' >> /tmp/table2
+              sed 's/|/\&|/g' /tmp/table2 | column -t -s'\&' \
+                | perl -pe 's/  \|/|/g;' | $PUTCLIP
               rm -f /tmp/table /tmp/table2
     ;;
 
@@ -273,9 +297,18 @@ case "$1" in
                  -e 's/(\S)\}\}\B/$1@/g;' \
                  -e 's/\{code:(\w+)\}/<pre><code class="$1">/g;' \
                  -e 's!\{code\}!</code></pre>!g;' \
+                 -e 's!\{noformat\}!</pre>!g;' \
                  -e 's/\[(.*?)\|(.*?)\]/"$1":$2/g;' \
                  | $PUTCLIP
     ;;
+
+    # Fix the insane CRAP Jira adds when you paste an OL email!
+    ### j2t       = Convert Jira to text by removing CR, 2NBSP (\xC2A0), 3x \n, and 1 leading space
+    # Third line is a slurp, could use `perl -o -pe` too
+    j2t     ) $GETCLIP | perl -pe 's/\r$//' \
+                       | perl -pe 's/\xc2\xa0//g;' \
+                       | perl -pe 'undef $/; s/\n\n\n/\n/g;' \
+                       | perl -pe 's/^\s(\S)/\1/g;' | $PUTCLIP ;;
 
     ### r2z       = Convert Redmine/Textile to Zim using Pandoc
     r2z     )
@@ -285,41 +318,61 @@ case "$1" in
           | $PUTCLIP
     ;;
 
-    ### z2w|z2r   = Convert Zim to Redmine markup
-    z2w|z2r ) $GETCLIP | zim2wiki.pl | $PUTCLIP ;;
+    ### z2r       = Convert Zim to Redmine markup
+    z22     ) $GETCLIP | zim2wiki.pl | $PUTCLIP ;;
+
+    ### z2j       = Convert Zim to Jira markup
+    z2j     )
+        $GETCLIP | zim2wiki.pl | $PUTCLIP  # Zim to Redmine
+        $0 r2j                             # Redmine to Jira
+    ;;
 
     ### z2m       = Convert Zim to Mediawiki markup
     z2m     ) $GETCLIP | zim2wiki.pl -m | $PUTCLIP ;;
 
-    ### z2h       = Convert Zim to HTML using Pandoc, to ~/wtmp/temp.html Webtop file
+    ### z2h       = Convert Zim to HTML using Pandoc, to /tmp/temp.html file
     z2h     )
         # Pandoc can't handle Zim checkboxes, so convert to bullets
         $GETCLIP | perl -pe 's/^\t//; s/\[.\]/*/;' \
-          | pandoc --from markdown --to html > ~/wtmp/temp.html
-        echo 'On VM side:     firefox ~/wtmp/temp.html'
-        echo 'On Webtop side: explorer tmp\temp.html'
+          | pandoc --from markdown --to html > /tmp/temp.html
     ;;
 
-    ### recap     = Convert an Ansible "RECAP" to a Redmine list (r2j to convert)
+    ### recap     = Convert an Ansible "RECAP" to a Jira list (j2r to convert)
+    # See also `recap` script
     recap   ) $GETCLIP | perl -p \
-                 -e 's/\s+$/\n/;' \
-                 -e 's/^(\w+.*? unreachable=1 .*)$/-\@\1\@-/;' \
-                 -e 's/^(\w+.*? failed=1.*)$/-\@\1\@- < failed/;' \
-                 -e 's/^(\w+.*)$/\@\1\@/;' \
-                 -e 's/^/# /;' \
-                 | $PUTCLIP
+                -e 's/\s+$/\n/;' \
+                -e 's/^(\w+.*? unreachable=1 .*)$/-{color:#FF0000}{{\1}}{color}- < unreachable/;' \
+                -e 's/^(\w+.*? failed=1.*)$/-{color:#B22222}{{\1}}{color}- < failed/;' \
+                -e 's/^(\w+.*? changed=[^0].*)$/{color:#FFA500}{{\1}}{color}/;' \
+                -e 's/^(\w+.*)$/{color:#008000}{{\1}}{color}/;' \
+                -e 's/^/# /;' \
+                | $PUTCLIP
     ;;
+    # This is pretty ugly, but...it works
     # Trim useless trailing white space
-    # Unreachable = -@@-
-    # Failed      = -@@- < failed
-    # Otherwise   = @@
+    # Unreachable = -{{...}}- < unreachable  Red
+    # Failed      = -{{...}}- < failed       FireBrick
+    # Changed     = {{...}}                  Orange
+    # Otherwise   = {{...}}                  Green
     # Add leading "# "
+    #
+    # My line colors                          Ansible ANSI color   Field
+    # {color:#FF0000}Red{color}               31m red              Unreachable
+    # {color:#B22222}FireBrick (Red){color}   31m red              Failed
+    # {color:#FFA500}Orange{color}            33m yellow           Changed
+    # {color:#008000}Green{color}             32m green            OK
+    # Didn't do Cyan for skipped              36m cyan             Skipped
+    # Changed is yellow in Ansible, but that's unreadable in my Jira testing
+    # I used different colors for unreachable vs. failed
+
+    ### call      = Wrap text into Zim "call" note
+    call )  echo -e "\t[ ] **Call: ? min $($GETCLIP)**" | $PUTCLIP ;;
 
     ### url       = Remove trash (e.g, "safelink", "\?.*$") & un-escape %nn from a URL
     url     ) $GETCLIP | perl -pe 's/\%(\w\w)/chr hex $1/ge;' \
                 -e 's!https?://.*?\.safelinks\.protection\.outlook\.com/\?url=!!;' \
                 -e 's/&amp;/&/g;' \
-                -e 's/&data=\d+\|01\|.+?\@bt\.com.*$//;' \
+                -e 's/&data=\d+\|01\|.+?\@\w+\.com.*$//;' \
                 | $PUTCLIP
     ;;
               # See https://unix.stackexchange.com/a/159309 for URL unescape
