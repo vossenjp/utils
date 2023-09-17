@@ -1,6 +1,6 @@
 #!/bin/bash -
 # Save/Restore FF sessions
-# $Id: ff-sess.sh 2158 2021-06-26 19:17:48Z root $
+# $Id: ff-sess.sh 2186 2021-11-21 21:38:08Z root $
 
 # # Twice daily FF session backup
 # 45 03,15 * * * opt/bin/ff-sess.sh qsave
@@ -45,7 +45,8 @@ case "$1" in
         for dir in $(ls -1d */session* | cut -d '/' -f1 | sort -u); do
             [ -d "$dir" ] || continue  # Just in case
             [ -d "$dir/sessionstore-backups/" ] \
-              || echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/' missing!"
+              || mkdir -pv "$dir/sessionstore-backups"  # Just FIX it!
+              #|| echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/' missing!"
             [ -f "$dir/sessionstore-backups/recovery.jsonlz4" ] \
               || echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/recovery.jsonlz4' missing!"
         done
