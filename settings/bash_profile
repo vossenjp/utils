@@ -2,7 +2,7 @@
 # To re-read (and implement changes to this file) use:
 # source $SETTINGS/bash_profile
 
-# Only if interactive bash with a terminal!
+# Only if bash in a terminal!
 [ -t 1 -a -n "$BASH_VERSION" ] || return
 
 # Fail-safe.  This should be set when we're called, but if not, the
@@ -74,7 +74,10 @@ if [ "$PS1" -a $TERM != "screen" -a "$USING_SCREEN" != "YES" -a -f ~/.use_screen
     for path in ${PATH//:/ }; do
         if [ -x "$path/screen" ]; then
             # If screen(1) exists and is executable, run our wrapper
-            [ -x "$SETTINGS/run_screen" ] && $SETTINGS/run_screen
+            [ -x "$SETTINGS/run_screen" ] && {
+                $SETTINGS/run_screen
+                break  # Break out, in case /bin -> /usr/bin/
+            }
         fi
     done
 fi
