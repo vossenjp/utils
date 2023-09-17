@@ -1,7 +1,7 @@
 #!/bin/bash -
 # findz--Find Zombie processes and parent PID
 # JP, 2021-01-23 Sat, 2021-03-28 Sun
-# $Id: findz 2166 2021-06-26 19:23:57Z root $
+# $Id: findz 2199 2023-02-18 20:33:01Z root $
 
 # Find and show Zombies
 zombies=$(ps -xal | egrep '^F\b|\bZ\b')
@@ -16,3 +16,7 @@ for ppid in $ppids; do
     ps uwx -q $ppid
     echo ''
 done
+
+# Linux Cookbook 2nd, ch20:
+# You can’t kill zombies because they are already dead. They use a minuscule bit of system resources, but if you want to try getting rid of them, try sending them a SIGCHLD:
+# $ sudo kill -s SIGCHLD 1299
