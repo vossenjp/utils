@@ -1,5 +1,5 @@
 " JP vim settings
-" $Id: vimrc 2117 2020-04-05 20:08:36Z root $
+" $Id: vimrc 2199 2023-02-18 20:33:01Z root $
 " http://www.vim.org/htmldoc/usr_05.html
     " https://github.com/markburns/useful-bash-scripts/blob/master/.vimrc
     " http://www.perlmonks.org/?node_id=540167
@@ -27,6 +27,9 @@ if has('gui_running')
     "colorscheme murphy
     colorscheme torte
 endif
+
+" 2022-06-30 fix "E388: Couldn't find definition" on ringo2 (TERM=screen-bce)
+set term=builtin_ansi
 
 set background=dark     " Since I usually have blue
 "hi Normal ctermbg=black  " I forget
@@ -187,6 +190,8 @@ nnoremap <Down> gj
 " Startup & settings
 
 set nocompatible   " Vim, not vi
+
+set history=200    " For :ex command history
 
 set autochdir  " always switch to the current file directory
 set nobackup   " No backup files
