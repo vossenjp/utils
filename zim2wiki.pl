@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # zim2wiki.pl--Trivially convert Zim markup to Redmine or Mediawiki
 # Original Author/date: JP, 2013-10-17
-my $VERSION = '$Id: zim2wiki.pl 2078 2018-12-15 22:01:39Z root $';
+my $VERSION = '$Id: zim2wiki.pl 2183 2021-10-05 00:34:56Z root $';
 #_________________________________________________________________________
 
 our ( $opt_h, $opt_m, );
@@ -19,29 +19,24 @@ if ( $opt_h ) {
     exit 0;
 }
 
-my $URL_REDMINE = qr'REDACTED';
-my $URL_MOES    = qr'REDACTED';
-#my $URL_SVN = 'REDACTED'; # not used (yet)?
-
-# FIXME: need an option for Redmine vs Mediawiki markup
-#my $bullet = '*';
-
 while (<>) {
-
     if ( $opt_m ) {
         ### Mediawiki
         # Convert headings (must do BEFORE converting to numbers!)
-        s/^=+/== ==/;                      # Next line!  :-(
-        s/^-+/=== ===/;                    # Next line!  :-(
-        s/^### (.*)$/==== $1 ====/;        # Inline
-        s/^#### (.*)$/===== $1 =====/;     # Inline
-        s/^##### (.*)$/====== $1 ======/;  # Inline
+        # OLD, Zim < 0.74.0
+        #s/^=+/== ==/;
+        #s/^-+/=== ===/;
+        #s/^### (.*)$/==== $1 ====/;
+        #s/^#### (.*)$/===== $1 =====/;
+        #s/^##### (.*)$/====== $1 ======/;
+        s/^=====(.*?)=====$/==$1==/;    # h2
+        s/^====(.*?)====$/===$1===/;    # h3
+        s/^===(.*?)===$/====$1====/;    # h4
+        s/^===(.*?)==$/=====$1=====/;   # h5
+        s/^==(.*?)==$/======$1======/;  # h6
         # TODO
         # Zim *bold*   = '''bold'''
         # Zim *italic* = ''italic''
-
-        # URL
-        s!$URL_MOES/(.*)$![[$1]]!g;
 
         # Code
         s!\b`(\S+)!<code>$1!g;
@@ -50,32 +45,37 @@ while (<>) {
     } else {
         ### Redmine (textile)
         # Convert headings (must do BEFORE converting to numbers!)
-        s/^=+/h1. /;      # Next line!  :-(
-        s/^-+/h2. /;      # Next line!  :-(
-        s/^### /h3. /;    # Inline
-        s/^#### /h4. /;   # Inline
-        s/^##### /h5. /;  # Inline
-        # TODO
-        # Zim *bold*       = *bold*
-        # Zim *italic*     = _italic_
-        # Zim _hightlight_ = +underline+
+        # OLD, Zim < 0.74.0
+        #s/^=+/h1. /;      # Next line!  :-(
+        #s/^-+/h2. /;      # Next line!  :-(
+        #s/^### /h3. /;    # Inline
+        #s/^#### /h4. /;   # Inline
+        #s/^##### /h5. /;  # Inline
+        s/^=====/h2./;     # Inline h2, etc...
+        s/^====/h3./;
+        s/^===/h4./;
+        s/^==/h5./;
+        s/ =+$//;          # Clean up right side cruft: ===
 
-        # URLs
-        s!$URL_REDMINE/issues/(\d+)#note-(\d+)!#$1-$2!g;
-        s!$URL_REDMINE/issues/(\d+)!#$1!g;
-        s!$URL_REDMINE/news/(\d+)!news#$1!g;
-        s!$URL_REDMINE/[\w/]+/wiki/(.*)$![[$1]]!g;
+        # Formatting
+        s/\*\*(.+?)\*\*/*$1*/g;           # **bold**      to *bold*
+        s~(?<!:)//(.+?)(?<!:)//~_$1_~g;   # //italic//    to _italic_
+        s/__(.+?)__/+$1+/g;               # __highlight__ to +underline+
+        s/''(.+?)''/\@$1\@/g;             # ''code''      to @code@
+        s/~~(.+?)~~/-$1-/g;               # ~~strike~~    to -strike-
+        # Note negative look-behind for ":" (like https://) in italics!
 
-        # Code
+        # Other Code (good/needed?)
         s/\B`(\S+)/\@$1/g;
         s/(\S+)`\B/$1\@/g;
     }
 
     ### SAME for Mediawiki and Redmine
-    # Convert various "[]" to "#"
+    # Convert various Zim checkboxes "[]" to "#"
     s/^(\s*)\[ \]\s+/$1# [ ] /;
     s/^(\s*)\[x\]\s+/$1# [x] /;
     s/^(\s*)\[>\]\s+/$1# [>] /;
+    s/^(\s*)\[<\]\s+/$1# [<] /;
     s/^(\s*)\[\*?\]\s+/$1# /;
     # Convert numbers to "#"
     s/^(\s*)\d+\. /$1# /;
@@ -86,4 +86,4 @@ while (<>) {
     s/^(\t+)([#*])/"$2" x (length($1))/e;
 
     print;
-}
+}  # end of while file input
