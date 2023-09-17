@@ -2,7 +2,7 @@
 # To re-read (and implement changes to this file) use:
 # source $SETTINGS/bashrc
 
-# Only if interactive bash with a terminal!
+# Only if bash in a terminal!
 [ -t 1 -a -n "$BASH_VERSION" ] || return
 
 # Fail-safe.  This should be set when we're called, but if not, the
@@ -39,13 +39,15 @@
 # something like:  if [ "$PS1" ]; then
 case "$-" in
     *i*)
+        #export PS0='Start: \D{%Y-%m-%d_%H:%M:%S_%Z}\n'  # Pre-Exe prompt, bash v4.4+
         #export PS1='\n[\u@\h t:\l l:$SHLVL h:\! j:\j v:\V]\n$PWD\$ '
         #export PS1='\n[\u@\h:T\l:L$SHLVL:C\!:\D{%Y-%m-%d_%H:%M:%S_%Z}]\n$PWD\$ '
-        export PS1='\n[\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\n$PWD\$ '
+        #export PS1='\n[\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\n$PWD\$ '
+        export PS1='\n\[\033[01;32m\][\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\[\033[00m\]\n$PWD\$ '
         #export PS2='> '                              # Secondary (i.e. continued) prompt
         #export PS3='Please make a choice: '          # Select prompt
         #export PS4='+xtrace $LINENO: '                # xtrace (debug) prompt
-        export PS4='+xtrace $BASH_SOURCE::$FUNCNAME-$LINENO: ' # xtrace (debug) prompt
+        export PS4='+xtrace $BASH_SOURCE:$LINENO:$FUNCNAME: ' # xtrace (debug) prompt
 
         # If this is an xterm set the title to user@host:dir
         case "$TERM" in
@@ -85,9 +87,10 @@ PATH="$PATH:/opt/bin"
 export MANWIDTH=80          # man page width, use < 80 if COLUMNS=80 & less -N
 export LC_COLLATE='C'         # Set traditional C sort order (e.g. UC first)
 export HOSTFILE='/etc/hosts'  # Use /etc/hosts for host name completion
-export CDPATH='.:~/:..:../..' # Similar to $PATH, but for use by 'cd'
+CDPATH='.:~/:..:../..' # Similar to $PATH, but for use by 'cd'
 # Note that the '.' in $CDPATH is needed so that cd will work under POSIX mode
 # but this will also cause cd to echo the new directory to STDOUT!
+# Do NOT `export CDPATH`, see http://mywiki.wooledge.org/BashPitfalls#export_CDPATH.3D.:.2BAH4-.2FmyProject
 # And see also "cdspell" above!
 
 # Import bash completion settings, if they exist in the default location
@@ -148,14 +151,24 @@ export LS_OPTIONS="$LS_OPTIONS -F -h"
 alias ls="ls $LS_OPTIONS"
 alias ll="ls $LS_OPTIONS -l"
 alias ll.="ls $LS_OPTIONS -ld"  # Usage: ll. ~/.*
-alias la="ls $LS_OPTIONS -la"
-alias lrt="ls $LS_OPTIONS -alrt"
+alias la="ls $LS_OPTIONS -lA"
+alias lrt="ls $LS_OPTIONS -Alrt"
+
+# Read/write the clipboard using 'xsel' (-b = use the CLIPBOARD selection)
+alias gc='xsel -b'           # Send X clipboard to STDOUT
+alias pc='xsel -bi'          # Send STDIN to X clipboard
+# Read/write the clipboard using 'xclip'
+#alias gc='xclip -out         # Send X selection to STDOUT
+#alias pc='xclip -in'         # Send STDIN to X selection
+# Read/write the Paste Buffer for Mac:
+#alias gc='pbpaste'           # Send Paste Buffer to STDOUT
+#alias pc='pbcopy'            # Send STDIN to Paste Buffer
+# Read/write the clipboard for Windows: ???
+# pclip.exe/putclip.exe
+# gclip.exe/getclip.exe
 
 # Useful aliases
 # Moved to a function: alias bot='cd $(dirname $(find . | tail -1))'
-#alias clip='xsel -b'         # pipe stuff into right "X" clipboard
-alias gc='xsel -b'           # "GetClip" get stuff from right "X" clipboard
-alias pc='xsel -bi'          # "PutClip" put stuff to right "X" clipboard
 alias clr='cd ~/ && clear'   # Clear and return $HOME
 alias cls='clear'            # DOS-ish for clear
 alias cal='cal -M'           # Start calendars on Monday
@@ -165,6 +178,8 @@ alias cvsst='cvs -qn update' # Hack to get concise CVS status (like svn st)
 alias del='rm'               # DOS-ish for rm
 alias df='df --print-type --exclude-type=tmpfs --exclude-type=devtmpfs'
 alias diff='diff -u'         # Make unified diffs the default
+alias gcm='git commit -m'    # Save a bit of typing
+alias gau='git add -u'       # Save a bit of typing
 alias jdiff="\diff --side-by-side --ignore-case --ignore-blank-lines\
   --ignore-all-space --suppress-common-lines" # Useful GNU diff command
 alias dir='ls'               # DOS-ish for ls
@@ -179,7 +194,7 @@ alias md='mkdir'             # DOS-ish for mkdir
 alias move='mv'              # DOS-ish for mv
 #alias mv='mv -i'            # Annoying Red Hat default from /root/.bashrc
 alias ntsysv='rcconf'        # Debian rcconf is pretty close to Red Hat ntsysv
-#alias open='gnome-open'      # Open files and URLs using the GNOME handlers = see `run ()` below!
+#alias open='xdg-open'      # Open files and URLs using the GNOME handlers = see `run ()` below!
 alias pathping='mtr'         # mtr - a network diagnostic tool
 alias ping='ping -c4'        # Only 4 pings by default
 alias r='fc -s'              # Recall and execute 'command' starting with...
@@ -193,6 +208,7 @@ alias shff="echo ' PID        USER    %CPU    %MEM  START COMMAND'; ps auwx | gr
 alias shffu="shff | grep -v 'contentproc' | egrep '\b$USER\b|^ +PID' --color=no"
 alias ffsh='shff'
 alias killallff="kill $(ps auwx | grep '/usr/lib/firefox/firefox' | awk '{print $2}')"
+alias shacheck='sha256sum --ignore-missing --check'
 alias showrss='perl -ne '\''print qq($1\n) if m/outline title="([^"]+)".*?type="folder"/; print qq(\t$1\t$2\n) if m/outline title="([^"]+)".*?xmlUrl="([^"]+)"/;'\'' ~/.config/liferea/feedlist.opml'
 #alias stupiddate="date '+/cpoutput/.../archive/%Y/%b/%a-%d'"
 alias svndiff='meld'         # Cool GUI diff, similar to TortoiseMerge
@@ -232,7 +248,10 @@ alias utc="date --utc '+%F %T %Z(%z)'"       # More readable ISO-8601 UTC
 alias meminfo='free -m -l -t'   # See how much memory you have left.
 alias whatpid='ps auwx | grep'  # Get PID and process info
 alias whatppid='ps -alx | grep' # Get PPID and process info
-alias port='netstat -tulanp'    # Show which applications are connecting to the network
+alias ports='sudo netstat -tulanp'    # Show which applications are connecting to the network
+# -p needs root
+# sudo netstat --tcp --udp --listening --all --numeric --program
+alias newnetstat='sudo ss -tulpan' # dump socket statistics
 
 # Set up some shortcuts if we're using systemd
 [ -x /bin/systemctl ] && {
@@ -250,15 +269,16 @@ alias port='netstat -tulanp'    # Show which applications are connecting to the 
 if [ -x /usr/bin/dpkg ]; then
     [ "$UID" = '0' ] || sudo='sudo '  # Prefix 'sudo' if we're not root
     # As of Debian 'Etch' `aptitude` is recommended over `apt-get`, so use if aval.
-    # Then later that changed back so now `apt-get` is recommended again!
+    # Later that changed back so now `apt-get` was recommended again.
+    # The latest is that it's `apt` which is easier to type.
     if [ -x /usr/bin/aptitude ]; then
-        alias ag="${sudo}aptitude"
+        #alias ag="${sudo}aptitude"  # Conflicts with silversearcher-ag
         alias agi="${sudo}aptitude install"
         alias agu="${sudo}aptitude update"
         # Also, I find typing 'aptitude' arduous
         # [ -x /usr/bin/aptitude ] && alias apt="${sudo}aptitude" # New `apt` tool!
     else
-        alias ag="${sudo}apt-get"
+        #alias ag="${sudo}apt-get"  # Conflicts with silversearcher-ag
         alias agi="${sudo}apt-get install"
         alias agu="${sudo}apt-get update"
     fi
@@ -293,7 +313,7 @@ function say {
 }
 
 
-# Expand a "shortened" URL (last one in case of "301 Moved Permanently")w
+# Expand a "shortened" URL (last one in case of "301 Moved Permanently")
 function expandurl {
     curl -ILs $1 | grep '^Location:' | tail -n1
 }
@@ -308,10 +328,31 @@ function svnignore {
 }
 
 
-# Use 'gnome-open' to "run" things
+# Fancy Pandoc to HTML rendering
+# Idea: https://00formicapunk00.wordpress.com/2022/08/19/everything-markdown-with-pandoc/
+# Great CSS from: wget http://benjam.info/panam/styling.css
+function pd2html {
+    src="$1"
+    basename="${src##*/}"         # Trim leading path
+    basename="${basename%%.*}"    # Trim trailing .ext
+    dst="${2:-.}/$basename.html"  # Default is ./<basename>.html
+    echo "Rendering '$src' to '$dst'..."
+    pandoc "$src" --include-in-header=$SETTINGS/panam-styling-include.css \
+      --metadata pagetitle="$basename" --to html5 --table-of-contents > "$dst"
+    # Note "--standalone" results in this, which is NOT what we want:
+    # BAD: <link rel="stylesheet" href="/opt/bin/settings/panam-styling.css" />
+    # But "--self-contained" tries to pull in EVERYTHING, including Google fonts!
+    # "--include-in-header=" works, but requires the included file be hacked
+    # to wrap the CSS in <style type="text/css"> ... </style> tags.  So
+    # while I was at it, I also hacked it to remove Google fonts and to cut
+    # WAY down on p,ul,ol,li margin-top & margin-bottom (leading).
+}
+
+
+# Use 'xdg-open' (was 'gnome-open') to "run" things
 function run {
     [ -r "$*" ] && {
-        gnome-open "$*" >& /dev/null
+        xdg-open "$*" >& /dev/null
     } || {
         echo "'$*' not found or not readable!"
     }
@@ -359,7 +400,7 @@ function calc {
 } # end of calc
 function rcalc {
     awk "BEGIN {print \"$\" $* \" = $*\" }";
-} # end of calc
+} # end of rcalc (raw)
 function addup {
     awk '{sum += $1} END {print sum}'
 }
