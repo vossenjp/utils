@@ -4,7 +4,7 @@
 # Original Author/date: JP, 2003
 # Ported from DOS/Win ~/Pub/util/pivot.pl 2020-04-05 Sun
 # $URL: file:///home/SVN/usr_local_bin/pivot.pl $
-my $VERSION = '$Id: pivot.pl 2109 2020-04-05 20:02:44Z root $';
+my $VERSION = '$Id: pivot.pl 2208 2023-09-17 18:42:44Z root $';
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ((my $PROGRAM = $0) =~ s/^.*(\/|\\)//ig); # remove up to last "\" or "/"
 
@@ -74,14 +74,17 @@ if ($verbose) { print STDERR ("\n\a$PROGRAM finished in ",time()-$^T," seconds.\
 # End of main
 ##########################################################################
 
+
 # Subroutines
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Emit usage information
 # Returns:  nothing, just exits
-sub usage {
+sub Usage {
+    my $exit_code = $_[0] || 1; # Default of 1 if exit code not specified
+
     # Unlike sh, Perl does not have a built in way to skip leading
     # TABs (but not spaces) to allow indenting in HERE docs  So we cheat.
-    ($USAGE = sprintf <<"EoN") =~ s/^\t//gm;
+    (my $usage = sprintf <<"EoN") =~ s/^\t+//gm;
 		Usage: $PROGRAM [OPTIONS] (-i [FILE]) (-o [FILE]) (-v)
 
 		   -i {infile}    = Use infile as the input file, otherwise use STDIN.
@@ -102,7 +105,8 @@ sub usage {
 		The first row (headers) must be >= the longest row in the data. Any row
 		longer than the first row will be truncated and a warning will be emitted.
 EoN
-    die ("\n");
+    print "$usage\n";
+    exit $exit_code; # exit with the specified error code
 } # end of usage
 
 
