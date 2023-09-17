@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # read-maillog.pl--Read 'mail.log' files written by Postfix and report details
 
-# $Id: read-maillog.pl 2102 2019-10-05 22:11:58Z root $
+# $Id: read-maillog.pl 2207 2023-09-17 18:40:41Z root $
 # $URL: file:///home/SVN/usr_local_bin/read-maillog.pl $
 
 # TODO
     # Hande these better? last message repeated 16 times
 
 
-my $VERSION   = '$Id: read-maillog.pl 2102 2019-10-05 22:11:58Z root $';
+my $VERSION   = '$Id: read-maillog.pl 2207 2023-09-17 18:40:41Z root $';
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ((my $PROGRAM = $0) =~ s/^.*(\/|\\)//); # remove up to last "\" or "/"
 
@@ -128,6 +128,13 @@ while ($aline = <$INFILE>) {
     # Sep 17 03:24:26 hamilton postgrey[1900]: cleaning main database finished. before: 430, after: 415
     # Sep 17 03:24:26 hamilton postgrey[1900]: cleaning clients database finished. before: 306, after: 295
     next GET_INPUT if $aline =~ m!^.*?postgrey.*?: cleaning !;
+    # Mar  1 23:49:57 ****-mail01 postfix/smtpd[559603]: discarding EHLO keywords: CHUNKING
+    next GET_INPUT if $aline =~ m!discarding EHLO keywords: CHUNKING$!;
+    # Feb 28 14:47:59 ****-mail01 postfix/scache[544478]: statistics: start interval Feb 28 14:38:56
+    # Feb 28 14:47:59 ****-mail01 postfix/scache[544478]: statistics: domain lookup hits=0 miss=8 success=0%
+    # Feb 28 14:47:59 ****-mail01 postfix/scache[544478]: statistics: address lookup hits=0 miss=32 success=0%
+    # Feb 28 14:47:59 ****-mail01 postfix/scache[544478]: statistics: max simultaneous domains=1 addresses=2 connection=2
+    next GET_INPUT if $aline =~ m!^.*?postfix/scache.*?statistics:!;
 
 
     # --------------------------------------------------------------------
@@ -346,6 +353,13 @@ while ($aline = <$INFILE>) {
         $error = "Improper command pipelining after QUIT\t$1";
         $record_with{$error}++;
         warn "ERROR:\t$error\n" if ( $debug >= 2 );
+    } elsif ( $aline =~ m/^.*?: using backwards-compatible default setting append_dot_mydomain=yes to rewrite (.*?)$/ ) {
+        # ...: using backwards-compatible default setting append_dot_mydomain=yes to rewrite
+        # Mar  1 12:00:02 lc-prod-mail01 postfix/trivial-rewrite[553759]: using backwards-compatible default setting append_dot_mydomain=yes to rewrite "****-mail01" to "****-mail01.*********.com"
+        $error = "Append_dot_mydomain\t$1";
+        $record_with{$error}++;
+        warn "ERROR:\t$error\n" if ( $debug >= 2 );
+
 
     # --------------------------------------------------------------------
     # Various attacks
@@ -601,7 +615,7 @@ read-maillog.pl--Read 'mail.log' files written by Postfix and report details
 
 =head1 VERSION
 
-$Id: read-maillog.pl 2102 2019-10-05 22:11:58Z root $
+$Id: read-maillog.pl 2207 2023-09-17 18:40:41Z root $
 
 See read-maillog.pl -V
 
@@ -637,7 +651,7 @@ See read-maillog.pl -V
 
 Postfix /var/log/mail.log (or mail.err) files are annoying to t-shoot because
 they are multi-line and multi-threaded, so the full details of a single message
-may be a bit scattered in the log.  This script pulls the peices together to
+may be a bit scattered in the log.  This script pulls the pieces together to
 make it easier to review and/or troubleshoot.
 
 The output is tab delimited for easy reading or filtering in a spreadsheet.
