@@ -2,13 +2,14 @@
 # tz--Trivial script to convert time zones using GNU date
 # JP 2018-12-19
 # $URL: file:///home/SVN/usr_local_bin/tz $
-# $Id: tz 2090 2018-12-20 01:38:41Z root $
+# $Id: tz 2205 2023-09-17 18:38:28Z root $
 
 # See:
 #    `man date` examples
 #    `man tzselect` & `man zdump`
 #    https://crashcourse.housegordon.org/gnu-date-timezones.html
 #    Super LAME TDD: ~/MyDocs/HOME/CODE/Shell/tz-test
+# https://en.wikipedia.org/wiki/Time_in_India
 #
 # To find timezones use `tzselect` or `ll /usr/share/zoneinfo`
 
@@ -30,16 +31,22 @@ if [ "$1" = '-h' -o "$1" = '--help' ]; then
 	    2l*ocal    = To local time
 	    2u*tc      = To UTC
 	    2r*eston   = To VA (America/New_York)
+	    2d*allas   = To DA (America/Chicago) (Dallas)
 	    2s*v       = To SV (America/Los_Angeles)
 	    2g*b       = To Great Briton/London (Europe/London)
+	    2m*        = To Rome (Europe/Rome)
 	    2a*u       = To Australia/Sydney
+	    2i*        = To India
 
 	Convert other times to local--you MUST supply the <time>:
 	    u*tc       = From UTC
 	    r*eston    = From VA (America/New_York)
+	    d*allas    = From DA (America/Chicago) (Dallas)
 	    s*v        = From SV (America/Los_Angeles)
 	    g*b        = From Great Briton/London (Europe/London)
+	    m*         = From Rome (Europe/Rome)
 	    a*u        = From Australia/Sydney
+	    i*         = From India
 	EoN
     exit 0
 fi
@@ -68,17 +75,23 @@ case "$action" in
     2l*       )                             date -d "$valid_time" "$OUTPUT_FORMAT" ;;
     2u*       ) TZ='UTC'                    date -d "$valid_time" "$OUTPUT_FORMAT" ;;
     2r* | 2v* ) TZ='America/New_York'       date -d "$valid_time" "$OUTPUT_FORMAT" ;;
+    2d*       ) TZ='America/Chicago'        date -d "$valid_time" "$OUTPUT_FORMAT" ;;
     2s*       ) TZ='America/Los_Angeles'    date -d "$valid_time" "$OUTPUT_FORMAT" ;;
     2g*       ) TZ='Europe/London'          date -d "$valid_time" "$OUTPUT_FORMAT" ;;
+    2m*       ) TZ='Europe/Rome'            date -d "$valid_time" "$OUTPUT_FORMAT" ;;
     2a*       ) TZ='Australia/Sydney'       date -d "$valid_time" "$OUTPUT_FORMAT" ;;
+    2i*       ) TZ='Asia/Kolkata'           date -d "$valid_time" "$OUTPUT_FORMAT" ;;
 
     # Convert other times to local, NOTE "user's" time, not validated time!
     #l*  ) this is pointless
     u*        ) date -d "TZ=\"UTC\"                    $users_time" "$OUTPUT_FORMAT" ;;
     r* | v*   ) date -d "TZ=\"America/New_York\"       $users_time" "$OUTPUT_FORMAT" ;;
+    d*        ) date -d "TZ=\"America/Chicago\"        $users_time" "$OUTPUT_FORMAT" ;;
     s*        ) date -d "TZ=\"America/Los_Angeles\"    $users_time" "$OUTPUT_FORMAT" ;;
     g*        ) date -d "TZ=\"Europe/London\"          $users_time" "$OUTPUT_FORMAT" ;;
+    m*        ) date -d "TZ=\"Europe/Rome\"            $users_time" "$OUTPUT_FORMAT" ;;
     a*        ) date -d "TZ=\"Australia/Sydney\"       $users_time" "$OUTPUT_FORMAT" ;;
+    i*        ) date -d "TZ=\"Asia/Kolkata\"           $users_time" "$OUTPUT_FORMAT" ;;
 
     *         )  # Just show some "now" (or validated given)!  Recursive!
         # If we get here then we'll try to treat "$action" as a time
@@ -87,8 +100,11 @@ case "$action" in
         echo -n "Local:  " ; $0 2l "$valid_time"
         echo -n "UTC:    " ; $0 2u "$valid_time"
         echo -n "VA:     " ; $0 2r "$valid_time"
+        echo -n "Dallas: " ; $0 2d "$valid_time"
         echo -n "SV:     " ; $0 2s "$valid_time"
         echo -n "London: " ; $0 2g "$valid_time"
+        echo -n "Rome:   " ; $0 2m "$valid_time"
         echo -n "Sydney: " ; $0 2a "$valid_time"
+        echo -n "India:  " ; $0 2i "$valid_time"
     ;;
 esac
