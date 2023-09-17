@@ -1,10 +1,10 @@
 #!/bin/bash -
 # sshfsw--sshfs wrapper
 
-# $Id: sshfsw 2076 2018-12-15 21:59:48Z root $
+# $Id: sshfsw 2199 2023-02-18 20:33:01Z root $
 
 PROGRAM=${0##*/}
-VERSION='$Id: sshfsw 2076 2018-12-15 21:59:48Z root $'
+VERSION='$Id: sshfsw 2199 2023-02-18 20:33:01Z root $'
 COPYRIGHT='Copyright 2008-2010 JP Vossen (http://www.jpsdomain.org/)'
 LICENSE='GNU GENERAL PUBLIC LICENSE v2'
 
@@ -133,7 +133,8 @@ case "$remote" in
     mydoc* )
         options="$mountpoint"  # Shift arguments as needed
         # "-o nonempty" for e.g. mini9 that has minimal ~/MyDocs/HOME/INTERNET/signature
-        map "$USER@$drake:/home/$USER/MyDocs" "$HOME/MyDocs" "-o idmap=user -o nonempty $options"
+        # In FUSE 3, "nonempty" was removed because it's now the default
+        map "$USER@$drake:/home/$USER/MyDocs" "$HOME/MyDocs" "-o idmap=user $options"
         sleep 2
         map "$USER@$drake:/home/JOINT"        "$HOME/Joint"  "-o idmap=user -o gid=1002 $options"
         sleep 2
