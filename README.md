@@ -52,6 +52,7 @@ The **`cl`** "clean Up script" is probably the most handy tool I have.  It's a f
 * `mksshconf` Trivial script to make ~/.ssh/config file since you can't #INCLUDE
 * `mount-iso` Trivial wrapper to mount an ISO image
 * `pivot-by-date.pl` Pivot "Count | Date | Key" columnar data by date and key
+* `pivot-key-value.pl` Pivot a key and a value column into a matrix
 * `pivot.pl` Pivot cells (e.g. columns to rows) in a table
 * `remote-desktop` Fire up a remote desktop session on the remote side (1-time only, no SSH)
 * `read-maillog.pl` Read 'mail.log' files written by Postfix and report details (quite crufty with hard-coded server names!)
