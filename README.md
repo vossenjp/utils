@@ -51,6 +51,7 @@ The **`cl`** "clean Up script" is probably the most handy tool I have.  It's a f
 * `linesort` Trivial in-line sort (sort delimited items within a single line, see also `cl`)
 * `mksshconf` Trivial script to make ~/.ssh/config file since you can't #INCLUDE
 * `mount-iso` Trivial wrapper to mount an ISO image
+* `pd` Trivial Pandoc Markdown to HTML or PDF wrapper
 * `pivot-by-date.pl` Pivot "Count | Date | Key" columnar data by date and key
 * `pivot-key-value.pl` Pivot a key and a value column into a matrix
 * `pivot.pl` Pivot cells (e.g. columns to rows) in a table
@@ -86,6 +87,7 @@ These are the settings or configs that I use everywhere, every day.
 * `settings/bash_profile` Login shell environment settings
 * `settings/bashrc` Subshell environment settings
 * `settings/inputrc` readline settings
+* `settings/panam-styling-include.css` "Fancy CSS" for use with Pandoc `pd` wrapper
 * `settings/run_screen` Wrapper script intended to run from a "profile" file to run screen at logon time with a friendly menu
 * `settings/screenrc` Screen RC file
 * `settings/vimrc` VIM RC file

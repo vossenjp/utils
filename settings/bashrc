@@ -329,23 +329,12 @@ function svnignore {
 
 
 # Fancy Pandoc to HTML rendering
-# Idea: https://00formicapunk00.wordpress.com/2022/08/19/everything-markdown-with-pandoc/
-# Great CSS from: wget http://benjam.info/panam/styling.css
-function pd2html {
-    src="$1"
-    basename="${src##*/}"         # Trim leading path
-    basename="${basename%%.*}"    # Trim trailing .ext
-    dst="${2:-.}/$basename.html"  # Default is ./<basename>.html
-    echo "Rendering '$src' to '$dst'..."
-    pandoc "$src" --include-in-header=$SETTINGS/panam-styling-include.css \
-      --metadata pagetitle="$basename" --to html5 --table-of-contents > "$dst"
-    # Note "--standalone" results in this, which is NOT what we want:
-    # BAD: <link rel="stylesheet" href="/opt/bin/settings/panam-styling.css" />
-    # But "--self-contained" tries to pull in EVERYTHING, including Google fonts!
-    # "--include-in-header=" works, but requires the included file be hacked
-    # to wrap the CSS in <style type="text/css"> ... </style> tags.  So
-    # while I was at it, I also hacked it to remove Google fonts and to cut
-    # WAY down on p,ul,ol,li margin-top & margin-bottom (leading).
+# function pd2html = moved to `/opt/bin/pd` wrapper
+function pd2html {    # Pandoc 2 HTML, for backwards compatibility
+    pd html $@
+}
+function rm2html {    # Readme to HTML, just in case
+    pd html $@
 }
 
 

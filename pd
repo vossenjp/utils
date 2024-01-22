@@ -1,0 +1,61 @@
+#!/bin/bash -
+# pd--Trivial Pandoc Markdown to HTML or PDF wrapper
+# JP, 2024-01-21
+# Moved from bashrc function and added PDF
+# Idea: https://00formicapunk00.wordpress.com/2022/08/19/everything-markdown-with-pandoc/
+# Fancy CSS adapted from: wget http://benjam.info/panam/styling.css
+
+PROGRAM=${0##*/}
+
+if [ $# -lt 2 -o "$1" = '-h' -o "$1" = '--help' ]; then
+    cat <<-EoN
+	$0 Trivial Pandoc Markdown to HTML or PDF wrapper
+	    usage: $0 (html|pdf) file.md (file2.md ...)
+	    e.g.:  $0 html README.md
+	EoN
+    exit 0
+fi
+
+format="$1"
+shift
+
+for src in "$@"; do
+    basename="${src##*/}"         # Trim leading path
+    basename="${basename%%.*}"    # Trim trailing .ext
+
+    case "$format" in
+
+        html|HTML|h)              # Fancy Pandoc to HTML rendering
+            dst="$basename.html"  # Output is ./<basename>.html
+            echo "Rendering '$src' to '$dst'..."
+
+            # Failed gracefully if the "fancy" CSS file is not available
+            [ -r "$SETTINGS/panam-styling-include.css" ] && \
+                css="--include-in-header=$SETTINGS/panam-styling-include.css"
+
+            pandoc "$src" $css --metadata pagetitle="$basename" --to html5 \
+              --table-of-contents > "$dst"
+
+            # Note "--standalone" results in this, which is NOT what we want:
+            # BAD: <link rel="stylesheet" href="/opt/bin/settings/panam-styling.css" />
+            # But "--self-contained" tries to pull in EVERYTHING, including Google fonts!
+            # "--include-in-header=" works, but requires the included file be hacked
+            # to wrap the CSS in <style type="text/css"> ... </style> tags.  So
+            # while I was at it, I also hacked it to remove Google fonts and to cut
+            # WAY down on p,ul,ol,li margin-top & margin-bottom (leading).
+        ;;
+
+        pdf|PDF|p)                # Pandoc to PDF rendering
+            dst="$basename.pdf"  # Output is ./<basename>.pdf
+            echo "Rendering '$src' to '$dst'..."
+
+            pandoc "$src" -V geometry:margin=1in --metadata pagetitle="$basename" \
+              --table-of-contents --to pdf > "$dst"
+        ;;
+
+        * )
+            $0 --help
+            exit 1
+        ;;
+    esac
+done
