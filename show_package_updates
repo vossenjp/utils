@@ -1,9 +1,9 @@
 #!/bin/bash -
 # show_package_updates--Trivially check for new packages
-# $Id: show_package_updates 2163 2021-06-26 19:21:07Z root $
+# $Id: show_package_updates 2216 2024-01-22 00:30:29Z root $
 # $URL: file:///home/SVN/usr_local_bin/show_package_updates $
 
-echo "$(hostname):" 'running $Id: show_package_updates 2163 2021-06-26 19:21:07Z root $'
+echo "$(hostname):" 'running $Id: show_package_updates 2216 2024-01-22 00:30:29Z root $'
 
 # Called from cron with --wait for random wait (except on drake) so not
 # everything is updating at once
@@ -81,4 +81,15 @@ aptitude search '~ahold'
 [ -r /var/run/reboot-required ] && {
     echo ''
     cat /var/run/reboot-required
+}
+
+[ -r /bin/inxi ] && {
+    echo ''
+    echo ''
+    echo '######################################################################'
+    echo 'System Information'
+    echo ''
+    # Command line system information script
+    # Short: inxi -Fxpmzr
+    inxi --color 0 --full --partitions-full --memory --repos --extra 1
 }
