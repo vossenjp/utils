@@ -299,6 +299,8 @@ case "$1" in
                  -e 's!\{code\}!</code></pre>!g;' \
                  -e 's!\{noformat\}!</pre>!g;' \
                  -e 's/\[(.*?)\|(.*?)\]/"$1":$2/g;' \
+                 -e 's/\{color:(#\w+)\}/%{color:\1}/g;' \
+                 -e 's/\{color\}/%/g;' \
                  | $PUTCLIP
     ;;
 
