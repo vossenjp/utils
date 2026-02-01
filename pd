@@ -34,7 +34,7 @@ for src in "$@"; do
                 css="--include-in-header=$SETTINGS/panam-styling-include.css"
 
             pandoc "$src" $css --metadata pagetitle="$basename" --to html5 \
-              --table-of-contents > "$dst"
+              --table-of-contents --toc-depth 4 > "$dst"
 
             # Note "--standalone" results in this, which is NOT what we want:
             # BAD: <link rel="stylesheet" href="/opt/bin/settings/panam-styling.css" />
@@ -50,7 +50,7 @@ for src in "$@"; do
             echo "Rendering '$src' to '$dst'..."
 
             pandoc "$src" -V geometry:margin=1in --metadata pagetitle="$basename" \
-              --table-of-contents --to pdf > "$dst"
+              --table-of-contents --toc-depth 4 --to pdf > "$dst"
         ;;
 
         * )

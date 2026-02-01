@@ -1,9 +1,9 @@
 #!/bin/bash -
 # show_package_updates--Trivially check for new packages
-# $Id: show_package_updates 2216 2024-01-22 00:30:29Z root $
+# $Id: show_package_updates 2250 2026-01-31 21:55:47Z root $
 # $URL: file:///home/SVN/usr_local_bin/show_package_updates $
 
-echo "$(hostname):" 'running $Id: show_package_updates 2216 2024-01-22 00:30:29Z root $'
+echo "$(hostname):" 'running $Id: show_package_updates 2250 2026-01-31 21:55:47Z root $'
 
 # Called from cron with --wait for random wait (except on drake) so not
 # everything is updating at once
@@ -15,9 +15,17 @@ fi
 /sbin/ifconfig | grep -o 'inet .*' | grep -v 'inet.*127.0.'
 # Get distro & kernel details
 [ -r /etc/os-release ] && grep '^PRETTY_NAME' /etc/os-release
-perl -ne 'print qq(\u$1: \u$2\n) if m!^deb http://.*?/(\w+)/?\s+(\w+)\s+main!;' /etc/apt/sources.list
+#perl -ne 'print qq(\u$1: \u$2\n) if m!^deb http://.*?/(\w+)/?\s+(\w+)\s+main!;' /etc/apt/sources.list
+perl -ne 'print qq(\u$1: \u$2\n) if m!^deb http://.*?/(\w+)/?\s+(\w+)\s+main!;' /etc/apt/sources.list.d/*.list | sort -u
+rg '^Suites:' /etc/apt/sources* | sort -u
 uname -a
 echo ''
+
+# 2016-01-16 Sat:
+[ -r /var/run/reboot-required ] && {
+    cat /var/run/reboot-required
+    echo ''
+}
 
 # Clean up the cache, then look for updates, but filter out some noise
 ##/usr/bin/aptitude clean > /dev/null
@@ -77,11 +85,10 @@ echo ''
 echo 'All packages ON HOLD:'                                    # Need to know...
 aptitude search '~ahold'
 
-# 2016-01-16 Sat:
-[ -r /var/run/reboot-required ] && {
-    echo ''
-    cat /var/run/reboot-required
-}
+# 2024-04-27 Sat (https://unix.stackexchange.com/a/774068)
+echo '######################################################################'
+echo 'Packages which have been removed but not purged, if any (use: apt purge "~c")'
+apt list '~c'
 
 [ -r /bin/inxi ] && {
     echo ''

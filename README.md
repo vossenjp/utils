@@ -40,6 +40,7 @@ The **`cl`** "clean Up script" is probably the most handy tool I have.  It's a f
 * `cl` **Clean Up script**, most wiki markup is Zim syntax, but there is Redmine and Jira in there too and some features require `pandoc` or other external tools
 * `colors` Echo color codes to the screen to see what works (http://www.tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html)
 * `deb` wrapper/reminder for various apt* and dpkg commands
+* `disk-and-partitions` Collect data on disks and partitions, just to have
 * `domath.pl` Perform math operations on arbitrary lines of numerical input
 * `editable_menu_shortcuts` Turn Gnome editable menu shortcuts on and off (Obsolete?)
 * `ff-sess.sh` Save/Restore FF sessions, with trivial restore GUI (CLI, using `dialog`)
@@ -52,8 +53,10 @@ The **`cl`** "clean Up script" is probably the most handy tool I have.  It's a f
 * `mksshconf` Trivial script to make ~/.ssh/config file since you can't #INCLUDE
 * `mount-iso` Trivial wrapper to mount an ISO image
 * `pd` Trivial Pandoc Markdown to HTML or PDF wrapper
+* `pick-one.sh` Randomly choose from a list of options
 * `pivot-by-date.pl` Pivot "Count | Date | Key" columnar data by date and key
 * `pivot-key-value.pl` Pivot a key and a value column into a matrix
+* `pivot-key-values.py` Pivot a key and a comma delimited value column into a matrix
 * `pivot.pl` Pivot cells (e.g. columns to rows) in a table
 * `remote-desktop` Fire up a remote desktop session on the remote side (1-time only, no SSH)
 * `read-maillog.pl` Read 'mail.log' files written by Postfix and report details (quite crufty with hard-coded server names!)
@@ -86,6 +89,7 @@ These are the settings or configs that I use everywhere, every day.
 * `settings/bash_logout` Clear the screen on logout to prevent information leaks
 * `settings/bash_profile` Login shell environment settings
 * `settings/bashrc` Subshell environment settings
+* `settings/gitconfig` My typical Git config
 * `settings/inputrc` readline settings
 * `settings/panam-styling-include.css` "Fancy CSS" for use with Pandoc `pd` wrapper
 * `settings/run_screen` Wrapper script intended to run from a "profile" file to run screen at logon time with a friendly menu

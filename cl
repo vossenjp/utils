@@ -1,8 +1,16 @@
 #!/bin/bash -
 # cl--Clean Up script
-# $Id: cl 2209 2023-09-17 18:44:53Z root $
+# $Id: cl 2243 2026-01-31 21:50:00Z root $
 # Requires many other tools: xsel, Perl, Python, pandoc, column, zim2wiki.pl,
 # awk, cat, cut, date, egrep, grep, head, rm, scp, sed, sort, tail, tee
+
+WORK_INCLUDE_FILE='/home/jp/bin/cl-include.lib'
+
+if [ -r "$WORK_INCLUDE_FILE" ]; then
+    HELP_FILES="$0 $WORK_INCLUDE_FILE"
+else
+    HELP_FILES="$0"
+fi
 
 if [ "$1" == '-h' -o "$1" == 'h' -o "$1" == '--help' -o "$1" == 'help' ]; then
     cat <<-EoN
@@ -304,6 +312,9 @@ case "$1" in
                  | $PUTCLIP
     ;;
 
+    ### j2z       = Convert Jira to Zim using Pandoc...
+    j2z      ) $GETCLIP | pandoc --from Jira --to ZimWiki | $PUTCLIP ;;
+
     # Fix the insane CRAP Jira adds when you paste an OL email!
     ### j2t       = Convert Jira to text by removing CR, 2NBSP (\xC2A0), 3x \n, and 1 leading space
     # Third line is a slurp, could use `perl -o -pe` too
@@ -321,7 +332,7 @@ case "$1" in
     ;;
 
     ### z2r       = Convert Zim to Redmine markup
-    z22     ) $GETCLIP | zim2wiki.pl | $PUTCLIP ;;
+    z2r     ) $GETCLIP | zim2wiki.pl | $PUTCLIP ;;
 
     ### z2j       = Convert Zim to Jira markup
     z2j     )
@@ -332,11 +343,14 @@ case "$1" in
     ### z2m       = Convert Zim to Mediawiki markup
     z2m     ) $GETCLIP | zim2wiki.pl -m | $PUTCLIP ;;
 
-    ### z2h       = Convert Zim to HTML using Pandoc, to /tmp/temp.html file
+    ### z2h       = Convert Zim to HTML using Pandoc, to ~/SHARED/temp.html Webtop file
     z2h     )
         # Pandoc can't handle Zim checkboxes, so convert to bullets
-        $GETCLIP | perl -pe 's/^\t//; s/\[.\]/*/;' \
-          | pandoc --from markdown --to html > /tmp/temp.html
+        $GETCLIP | zim2wiki.pl | perl -pe 's/^\t//; s/\[.\]/*/;' \
+          | pandoc --from textile --to html > ~/SHARED/temp.html
+        echo "Don't forget to 'Copy As...Wiki'!"
+        echo 'On VM side:     firefox ~/SHARED/temp.html'
+        echo 'On Webtop side: explorer "OneDrive - BT Plc\Documents\SHARED\temp.html"'
     ;;
 
     ### recap     = Convert an Ansible "RECAP" to a Jira list (j2r to convert)
@@ -348,7 +362,7 @@ case "$1" in
                 -e 's/^(\w+.*? changed=[^0].*)$/{color:#FFA500}{{\1}}{color}/;' \
                 -e 's/^(\w+.*)$/{color:#008000}{{\1}}{color}/;' \
                 -e 's/^/# /;' \
-                | $PUTCLIP
+                | sort | $PUTCLIP
     ;;
     # This is pretty ugly, but...it works
     # Trim useless trailing white space
@@ -374,7 +388,7 @@ case "$1" in
     url     ) $GETCLIP | perl -pe 's/\%(\w\w)/chr hex $1/ge;' \
                 -e 's!https?://.*?\.safelinks\.protection\.outlook\.com/\?url=!!;' \
                 -e 's/&amp;/&/g;' \
-                -e 's/&data=\d+\|01\|.+?\@\w+\.com.*$//;' \
+                -e 's/&data=\d+\|\d+\|.+?\@\w+\.com.*$//;' \
                 | $PUTCLIP
     ;;
               # See https://unix.stackexchange.com/a/159309 for URL unescape
@@ -396,6 +410,34 @@ case "$1" in
         $GETCLIP | perl -pe 's!/ref.*$!/!g;' | $PUTCLIP
     ;;
 
+    ### em|ol     = Process copy&paste from Outlook Sent Mail
+    em|ol   ) $GETCLIP | emm.pl | $PUTCLIP ;;
+              # See '...Pub/util/CIS/emm.pl'.  Brute-force:
+                # $GETCLIP | cut -f2 | sort -u | grep -v '^Subject$' \
+                #  | perl -ne 'chomp(); print qq(>EM "$_"\n);' | $PUTCLIP ;;
+
+    ### sent      = Add a '{date} >EM "test"' wrapper around input
+    sent|send ) printf "%(%F %a)T >EM \"%s\"\n" '-1' "$($GETCLIP)" | $PUTCLIP ;;
+
+    ### days (n)  = Print the next n days (18 is default) to the screen and /tmp/days
+    days    ) for day in $(seq 0 ${2:-18}); do date -d "+ $day day" '+%Y-%m-%d %a:'; done | tee /tmp/days ;;
+
+    ### opsview   = Convert Opsview warnings/critical matrix to table
+    opsview ) $GETCLIP | opsview-to-table.pl | $PUTCLIP ;;
+
+    ### bp|sgp    = Same as "x" but also remove trailing "-?b_id=NNNN" or "-" (no 'pipe*)
+    bp|sgp  )
+        $0 x  # Recursive call won't work with pipe*
+        $GETCLIP | perl -pe 's/-\?b_id=\d+$//; s/-$//;' | $PUTCLIP
+    ;;
+
     ### *         = Trim leading and/or trailing white space
-    *       ) $GETCLIP | perl -pe 's/^\s+//; s/\s+$/\n/;' | $PUTCLIP ;;
+    *       )
+        if [ -r "$WORK_INCLUDE_FILE" ]; then
+            source "$WORK_INCLUDE_FILE"
+        else
+            $GETCLIP | perl -pe 's/^\s+//; s/\s+$/\n/;' | $PUTCLIP
+        fi
+    ;;
+
 esac

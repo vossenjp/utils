@@ -1,0 +1,38 @@
+#!/bin/bash -
+# disk-and-partitions--Collect data on disks and partitions, just to have
+# 2018-08-25 Sat
+
+SEPARATOR='----------------------------------------------------------------------'
+MDADM_CONF='/etc/mdadm/mdadm.conf'
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+function _Section {
+    printf "\n%s\n%(%Y-%m-%d)T: %s\n\n" $SEPARATOR -1 "$*"
+} # end of function _Section
+
+###########################################################
+# Main
+
+printf "%(%Y-%m-%d %T %z)T\n" -1
+
+_Section 'Hardware details'
+sudo lshw -C disk
+
+_Section 'Disk partitions'
+sudo sfdisk -l
+# See also angstrom:/root/grow-boot.angstrom for sfdisk file example
+
+_Section 'Dev Disk Details'
+sudo ls -lR /dev/disk
+
+_Section 'Block device attributes'
+blkid
+
+_Section 'List block devices'
+lsblk
+
+_Section 'List file system table (fstab)'
+cat -n /etc/fstab
+
+_Section "List mdadm.conf if applicable"
+[ -f "$MDADM_CONF" ] && cat -n "$MDADM_CONF"

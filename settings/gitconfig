@@ -1,0 +1,42 @@
+[user]
+	name = JP Vossen
+	email = jp@jpsdomain.org
+[credential]
+	helper = cache --timeout 3600
+[core]
+	pager = less --RAW-CONTROL-CHARS --LONG-PROMPT --quit-if-one-screen --ignore-case --QUIET --no-init
+	whitespace = blank-at-eol,blank-at-eof,space-before-tab,-indent-with-non-tab,-tab-in-indent,-cr-at-eol
+	autocrlf = input
+	excludesfile = ~/.gitignore
+	symlinks = true
+[color]
+	ui = true
+[push]
+	default = matching
+[alias]
+	br = branch
+	ci = commit
+	co = checkout
+	st = status
+	wc = whatchanged
+	uncommit = reset --soft HEAD^
+	unstage = reset HEAD --
+	difflast = diff HEAD^ HEAD
+	cdiff  = diff --color-words
+	wdiff  = diff --word-diff
+	diffs  = diff --staged
+	staged = diff --staged
+	files = diff --name-status
+	#hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+	hist = log --pretty=format:\"%h | %ad | %an | %s%d\" --graph --date=short
+	last = log -1 HEAD
+	up = !git stash && git pull && git stash pop
+	reup = !git stash && git rebase && git stash pop
+[log]
+	# Needs Git 2.6+
+	date = iso-local
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+	ff = only

@@ -1,16 +1,39 @@
-#!/bin/sh
+#!/bin/bash -
 # srpm-extract -- Extract files from a source RPM
 # 2002-05-27 JPV
+# 2025-01-13,09-23: if this fails, like as follows, `apt install rpm2cpio`
+# or see the BINARY `/bin/rpm2cpio` on an RPM system!
+#    Error: header not recognized
+#    cpio: premature end of archive
 
-if [ -z "$1" ]; then
+if [ -z "$1" -o "$1" == '-h' -o "$1" == '--help' ]; then
     echo ''
-    echo 'To extract files from an SRPM:'
-    echo ''
+    echo 'Extract files from an (S)RPM:'
     echo "     usage: $0 {Package Name}"
     echo ''
-    echo "     Hint: you probably want to be in an empty temp dir."
+    echo "Will create a dir name based on the file by removing .(s)rpm suffix."
     echo ''
     exit 1
-else
-    rpm2cpio $1 | cpio -i --make-directories
 fi
+
+file="$1"
+dir="${file%%.srpm}"  # Remove trailing .srpm, if any
+dir="${dir%%.rpm}"    # Remove trailing .rpm, if any
+
+set -e # Exit immediately if a command exits with a non-zero status
+
+if [ ! -f "$file" ]; then
+    echo "FATAL: '$file' not found!"
+    exit 2
+fi
+
+if [ -d "$dir" ]; then
+    echo "FATAL: '$dir' already exists!"
+    exit 3
+else
+    mkdir "$dir"
+fi
+cd "$dir"
+
+echo "Extracting to '$dir'..."
+rpm2cpio "../$file" | cpio -i --make-directories

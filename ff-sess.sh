@@ -1,6 +1,6 @@
 #!/bin/bash -
 # Save/Restore FF sessions
-# $Id: ff-sess.sh 2186 2021-11-21 21:38:08Z root $
+# $Id: ff-sess.sh 2244 2026-01-31 21:51:03Z root $
 
 # # Twice daily FF session backup
 # 45 03,15 * * * opt/bin/ff-sess.sh qsave
@@ -44,11 +44,21 @@ case "$1" in
         # already created the tarball, better to have some of it anyway...
         for dir in $(ls -1d */session* | cut -d '/' -f1 | sort -u); do
             [ -d "$dir" ] || continue  # Just in case
-            [ -d "$dir/sessionstore-backups/" ] \
-              || mkdir -pv "$dir/sessionstore-backups"  # Just FIX it!
-              #|| echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/' missing!"
-            [ -f "$dir/sessionstore-backups/recovery.jsonlz4" ] \
-              || echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/recovery.jsonlz4' missing!"
+            [ -d "$dir/sessionstore-backups/" ] || {
+                # TRY to fix it...
+                echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/' missing!  Trying to fix it:"
+                mkdir -pv "$dir/sessionstore-backups"
+            }
+            [ -f "$dir/sessionstore-backups/recovery.jsonlz4" ] || {
+                # TRY to fix it...
+                echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/recovery.jsonlz4' missing!  Trying to fix it:"
+                if [ -f "$dir/sessionstore-backups/previous.jsonlz4" ]; then
+                    cp -av "$dir/sessionstore-backups/previous.jsonlz4" \
+                           "$dir/sessionstore-backups/recovery.jsonlz4"
+                else
+                    echo "WARNING: '$HOME/.mozilla/firefox/$dir/sessionstore-backups/previous.jsonlz4' ALSO missing!  Giving up!"
+                fi
+            }
         done
     ;;
 

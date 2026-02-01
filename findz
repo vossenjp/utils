@@ -1,10 +1,10 @@
 #!/bin/bash -
 # findz--Find Zombie processes and parent PID
 # JP, 2021-01-23 Sat, 2021-03-28 Sun
-# $Id: findz 2199 2023-02-18 20:33:01Z root $
+# $Id: findz 2246 2026-01-31 21:52:25Z root $
 
 # Find and show Zombies
-zombies=$(ps -xal | egrep '^F\b|\bZ\b')
+zombies=$(ps -xal | egrep '^F\b|\bZl?\b')
 echo 'Zombie processes:'
 echo "$zombies"
 echo ''

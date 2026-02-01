@@ -43,7 +43,16 @@ case "$-" in
         #export PS1='\n[\u@\h t:\l l:$SHLVL h:\! j:\j v:\V]\n$PWD\$ '
         #export PS1='\n[\u@\h:T\l:L$SHLVL:C\!:\D{%Y-%m-%d_%H:%M:%S_%Z}]\n$PWD\$ '
         #export PS1='\n[\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\n$PWD\$ '
-        export PS1='\n\[\033[01;32m\][\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\[\033[00m\]\n$PWD\$ '
+
+        [ -r /etc/os-release ] && source /etc/os-release
+        if [ "$ID" == 'linuxmint' ]; then
+            # Green (32m) colored prompt for workstations
+            export PS1='\n\[\033[01;32m\][\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\[\033[00m\]\n$PWD\$ '
+        else
+            # Brown (33m) colored prompt otherwise
+            export PS1='\n\[\033[01;33m\][\u@\h:T\l:L$SHLVL:C\!:J\j:\D{%Y-%m-%d_%H:%M:%S_%Z}]\[\033[00m\]\n$PWD\$ '
+        fi
+
         #export PS2='> '                              # Secondary (i.e. continued) prompt
         #export PS3='Please make a choice: '          # Select prompt
         #export PS4='+xtrace $LINENO: '                # xtrace (debug) prompt
@@ -178,8 +187,9 @@ alias cvsst='cvs -qn update' # Hack to get concise CVS status (like svn st)
 alias del='rm'               # DOS-ish for rm
 alias df='df --print-type --exclude-type=tmpfs --exclude-type=devtmpfs'
 alias diff='diff -u'         # Make unified diffs the default
-alias gcm='git commit -m'    # Save a bit of typing
 alias gau='git add -u'       # Save a bit of typing
+#alias gcm='git commit -m'    # Replaced by /opt/bin/gcm
+alias gi='geany'             # Open in Geany
 alias jdiff="\diff --side-by-side --ignore-case --ignore-blank-lines\
   --ignore-all-space --suppress-common-lines" # Useful GNU diff command
 alias dir='ls'               # DOS-ish for ls
@@ -189,6 +199,7 @@ alias inxi='inxi -c19'       # (Ubuntu) system information script
 alias ipconfig='ifconfig'    # Windows-ish for ifconfig
 alias lesss='less -S'        # Don't wrap lines
 alias locate='locate -i'     # Case-insensitive locate
+alias lsblk='lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,LABEL,UUID'
 alias man='LANG=C man'       # Display man pages properly
 alias md='mkdir'             # DOS-ish for mkdir
 alias move='mv'              # DOS-ish for mv
@@ -203,7 +214,7 @@ alias rd='rmdir'             # DOS-ish for rmdir
 alias randomwords="shuf -n102 /usr/share/dict/words | perl -ne 'print qq(\u\$_);' | column"
 alias ren='mv'               # DOS-ish for mv/rename
 #alias rm='rm -i'            # Annoying Red Hat default from /root/.bashrc
-alias reloadbind='rndc -k /etc/bind/rndc.key freeze && rndc -k /etc/bind/rndc.key reload && rndc -k /etc/bind/rndc.key thaw' # Reload dynamic BIND zones after editing db.* files
+alias reloadbind='rndc -k /etc/bind/rndc.key freeze ; rndc -k /etc/bind/rndc.key reload && rndc -k /etc/bind/rndc.key thaw' # Reload dynamic BIND zones after editing db.* files
 alias shff="echo ' PID        USER    %CPU    %MEM  START COMMAND'; ps auwx | grep '[f]irefox' | perl -alne 'printf (\"%5d %10s %7.2f %7.2f %s %s %s %s %s %s\\n\", @F[1,0,2,3,8,10..@F-1]);'"
 alias shffu="shff | grep -v 'contentproc' | egrep '\b$USER\b|^ +PID' --color=no"
 alias ffsh='shff'
